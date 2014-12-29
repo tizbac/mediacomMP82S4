@@ -584,9 +584,6 @@ static int usb_hidinput_input_event(struct input_dev *dev, unsigned int type, un
 	unsigned long flags;
 	int offset;
 
-
-//	printk("---sk----   type=%d,code=%d,value=%d     \n",type,code,value);
-
 	if (type == EV_FF)
 		return input_ff_event(dev, type, code, value);
 

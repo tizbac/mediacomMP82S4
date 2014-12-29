@@ -20,6 +20,7 @@ struct rk29_keys_button {
 	int gpio;
 	int adc_value;
 	int adc_state;
+	int adc_debounce;
 	int active_low;
 	char *desc;
 	int wakeup;	

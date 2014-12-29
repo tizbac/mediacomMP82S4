@@ -37,6 +37,7 @@
 #include <mach/cpu.h>
 #include <mach/ddr.h>
 #include <mach/dvfs.h>
+#include <plat/efuse.h>
 
 #define VERSION "2.1"
 
@@ -80,6 +81,9 @@ static DEFINE_MUTEX(cpufreq_mutex);
 static struct clk *gpu_clk;
 static bool gpu_is_mali400;
 static struct clk *ddr_clk;
+static int cpu_freq_max;
+unsigned env_get_u32(char *name, unsigned value);
+extern u8 efuse_buf[];
 
 static int cpufreq_scale_rate_for_dvfs(struct clk *clk, unsigned long rate, dvfs_set_rate_callback set_rate);
 
@@ -425,7 +429,7 @@ static int rk3188_cpufreq_init_cpu0(struct cpufreq_policy *policy)
 		return PTR_ERR(cpu_clk);
 
 #if defined(CONFIG_ARCH_RK3188)
-	if (soc_is_rk3188()) {
+	if (soc_is_rk3188() || soc_is_rk3188plus()) {
 		struct cpufreq_frequency_table *table_adjust;
 		/* Adjust dvfs table avoid overheat */
 		table_adjust = dvfs_get_freq_volt_table(cpu_clk);
@@ -455,7 +459,16 @@ static int rk3188_cpufreq_init_cpu0(struct cpufreq_policy *policy)
 	}
 	low_battery_freq = get_freq_from_table(low_battery_freq);
 	clk_enable_dvfs(cpu_clk);
-
+	if(0 && rk_tflag()){
+#define RK3188_T_LIMIT_FREQ	(1416 * 1000)
+		dvfs_clk_enable_limit(cpu_clk, 0, RK3188_T_LIMIT_FREQ * 1000);
+		for (i = 0; freq_table[i].frequency != CPUFREQ_TABLE_END; i++) {
+			if (freq_table[i].frequency > RK3188_T_LIMIT_FREQ) {
+				printk("cpufreq: delete arm freq(%u)\n", freq_table[i].frequency);
+				freq_table[i].frequency = CPUFREQ_TABLE_END;
+			}
+		}
+	}
 	freq_wq = alloc_workqueue("rk3188_cpufreqd", WQ_NON_REENTRANT | WQ_MEM_RECLAIM | WQ_HIGHPRI | WQ_FREEZABLE, 1);
 	rk3188_cpufreq_temp_limit_init(policy);
 #ifdef CPU_FREQ_DVFS_TST
@@ -468,6 +481,12 @@ static int rk3188_cpufreq_init_cpu0(struct cpufreq_policy *policy)
 
 static int rk3188_cpufreq_init(struct cpufreq_policy *policy)
 {
+	int pll_flag = rk_pll_flag() | rk_tflag();
+	if(pll_flag == 0) {
+		pll_flag = env_get_u32("ddr_max_freq", 0) < 500;
+	}
+	cpu_freq_max = env_get_u32("cpu_freq_max", pll_flag ? 1416000 : 1608000);
+	printk("cpu freq %02x %d\n", efuse_buf[22], cpu_freq_max);
 	if (policy->cpu == 0) {
 		int err = rk3188_cpufreq_init_cpu0(policy);
 		if (err)
@@ -629,6 +648,10 @@ static int rk3188_cpufreq_target(struct cpufreq_policy *policy, unsigned int tar
 	if (relation & DISABLE_FURTHER_CPUFREQ)
 		no_cpufreq_access++;
 	relation &= ~MASK_FURTHER_CPUFREQ;
+
+	if(target_freq>cpu_freq_max){
+		target_freq = cpu_freq_max;
+	}
 
 	ret = cpufreq_frequency_table_target(policy, freq_table, target_freq, relation, &i);
 	if (ret) {

@@ -31,7 +31,9 @@
 extern void hdmi_register_display_sysfs(struct hdmi *hdmi, struct device *parent);
 extern void hdmi_unregister_display_sysfs(struct hdmi *hdmi);
 
+#ifndef CONFIG_MFD_RK610
 struct hdmi *hdmi = NULL;
+#endif
 
 #if defined(CONFIG_DEBUG_FS)
 static int rk616_hdmi_reg_show(struct seq_file *s, void *v)
@@ -198,7 +200,7 @@ static void rk616_irq_work_func(struct work_struct *work)
 	if((hdmi->suspend == 0) && (hdmi->enable == 1)) {
                 rk616_hdmi_work();
 	}
-	hdmi_dbg(hdmi->dev, "func: %s, enable_irq\n", __func__);
+	dev_info(hdmi->dev, "func: %s, enable_irq\n", __func__);
         enable_irq(hdmi->irq);
 }
 
@@ -209,11 +211,12 @@ static irqreturn_t rk616_hdmi_irq(int irq, void *dev_id)
 
         rk616_irq_work_struct  = dev_id;
         disable_irq_nosync(hdmi->irq);
-	printk(KERN_INFO "rk616_hdmi_irq irq triggered.\n");
+	//printk(KERN_INFO "rk616_hdmi_irq irq triggered.\n");
 	queue_work(hdmi->workqueue, rk616_irq_work_struct);
         return IRQ_HANDLED;
 }
 #endif
+int lcd_supported(char * name);
 static int __devinit rk616_hdmi_probe (struct platform_device *pdev)
 {
 	int ret;
@@ -223,6 +226,9 @@ static int __devinit rk616_hdmi_probe (struct platform_device *pdev)
 	if(!rk616)
 	{
 		dev_err(&pdev->dev,"null mfd device rk616!\n");
+		return -ENODEV;
+	}
+	if(!lcd_supported("rkhdmi616")) {
 		return -ENODEV;
 	}
 
@@ -361,7 +367,7 @@ static int __devexit rk616_hdmi_remove(struct platform_device *pdev)
 		kfree(hdmi);
 		hdmi = NULL;
 	}
-	printk(KERN_INFO "rk616 hdmi removed.\n");
+	hdmi_dbg(hdmi->dev, "rk616 hdmi removed.\n");
 	return 0;
 }
 
@@ -382,7 +388,7 @@ static void rk616_hdmi_shutdown(struct platform_device *pdev)
                         disable_irq(hdmi->irq);
                 mutex_unlock(&hdmi->enable_mutex);
         }
-        printk(KERN_INFO "rk616 hdmi shut down.\n");
+        hdmi_dbg(hdmi->dev,  "rk616 hdmi shut down.\n");
 }
 
 static struct platform_driver rk616_hdmi_driver = {

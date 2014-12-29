@@ -33,6 +33,8 @@
 ** Otherwise, there is no need to define the following values¡£
 */
 //#define RK29SDK_WIFI_SDIO_CARD_INT         RK30_PIN3_PD2
+#define RK30SDK_WIFI_GPIO_WIFI_INT_B                RK30_PIN3_PD2
+#define RK30SDK_WIFI_GPIO_WIFI_INT_B_ENABLE_VALUE   GPIO_HIGH
 
 
 /*
@@ -72,7 +74,7 @@ int rk31sdk_get_sdmmc0_pin_io_voltage(void)
 */          
 #if defined(CONFIG_RTL8192CU) || defined(CONFIG_RTL8188EU) || defined(CONFIG_RTL8723AU) 
     #define RK30SDK_WIFI_GPIO_POWER_N               RK30_PIN3_PD0            
-    #define RK30SDK_WIFI_GPIO_POWER_ENABLE_VALUE    GPIO_LOW//GPIO_HIGH        
+    #define RK30SDK_WIFI_GPIO_POWER_ENABLE_VALUE    GPIO_HIGH
     
 #elif defined(CONFIG_BCM4329) || defined(CONFIG_BCM4319) || defined(CONFIG_RKWIFI) \
 	|| defined(CONFIG_RTL8189ES)

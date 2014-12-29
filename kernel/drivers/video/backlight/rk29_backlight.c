@@ -27,6 +27,7 @@
 #include <asm/io.h>
 #include <mach/board.h>
 #include <plat/pwm.h>
+#include <mach/yfmach.h>
 
 #define PWM_DIV              PWM_DIV2
 #define PWM_APB_PRE_DIV      1000
@@ -49,6 +50,9 @@ static void __iomem *pwm_base;
 static struct backlight_device *rk29_bl;
 static int suspend_flag = 0;
 
+static int sys_data_ready = 0;
+#define DATA_INDEX (SYS_DATA_MARK|3)
+#define MIN_MAX    100
 
 int convertint(const char s[])  
 {  
@@ -99,7 +103,23 @@ static inline void rk29_bl_max_brightness_check(struct rk29_bl_info *rk29_bl_inf
 		rk29_bl_info->max_brightness = BL_STEP;
 }	
 
+// 均匀调节亮度
+int yftech_rk29_bl_val_scalor_line(struct rk29_bl_info *rk29_bl_info,int brightness)
+{
+	#define min_progress_bar	10
+	#define max_progress_bar	255
+	#define min_real_bright		(rk29_bl_info->min_brightness)
+	#define max_real_bright		(rk29_bl_info->max_brightness)
 
+	brightness = min(brightness, max_progress_bar);
+	brightness = max(brightness, min_progress_bar);
+
+	brightness = ((brightness - min_progress_bar ) * (max_real_bright - min_real_bright))
+		/ (max_progress_bar - min_progress_bar);
+	brightness += min_real_bright;
+
+	return brightness;
+}
 
 int rk29_bl_val_scalor_line(struct rk29_bl_info *rk29_bl_info,int brightness)
 {
@@ -116,6 +136,7 @@ int rk29_bl_val_scalor_line(struct rk29_bl_info *rk29_bl_info,int brightness)
 		brightness = brightness*(rk29_bl_info->max_brightness - rk29_bl_info->min_brightness);
 		brightness = (brightness/255) + rk29_bl_info->min_brightness;
 	#endif
+
 	return brightness;
 }
 int rk29_bl_val_scalor_conic(struct rk29_bl_info *rk29_bl_info,int brightness)
@@ -161,7 +182,7 @@ static int rk29_bl_update_status(struct backlight_device *bl)
 	if(brightness)
 	{
 		if(rk29_bl_info->brightness_mode==BRIGHTNESS_MODE_LINE)
-			brightness=rk29_bl_val_scalor_line(rk29_bl_info,brightness);
+			brightness=yftech_rk29_bl_val_scalor_line(rk29_bl_info,brightness);
 		else
 			brightness=rk29_bl_val_scalor_conic(rk29_bl_info,brightness);
 	}
@@ -219,6 +240,91 @@ out:
 	return 0;
 }
 
+static int rk29_bl_sys_data(unsigned char * b)
+{
+	int ret = sys_data_read(DATA_INDEX, 4, b);
+	if(ret >= 0) {
+		if(b[1] >= MIN_MAX && b[0] < b[1]) {
+			int crc = 0x55 ^ b[0] ^ b[1];
+			if(b[2] == crc) {
+				b[2] = 0;
+				return 2;
+			}
+			if(b[3] == (crc ^ b[2])) return 3;
+		}
+		return 0;
+	}
+	return -1;
+}
+
+static int rk29_bl_set_brightness(struct backlight_device *bl)
+{
+	if(!sys_data_ready) {
+		unsigned char b[4] = {0};
+		int ret = rk29_bl_sys_data(b);
+		if(ret >= 0) {
+			sys_data_ready = 1;
+			if(ret >= 2) {
+				struct rk29_bl_info *rk29_bl_info = bl_get_data(bl);
+				rk29_bl_info->min_brightness = b[0];
+				rk29_bl_info->max_brightness = b[1];
+				if(ret >= 3) {
+					rk29_bl_info->bl_ref = b[2] & 1;
+				}
+				printk("get sys bright %d %d %d\n", b[0], b[1], b[2]);
+			}
+		}
+	}
+	return rk29_bl_update_status(bl);
+}
+
+#include <linux/proc_fs.h>
+
+static int bright_read(char *page, char **start, off_t off,int count, int *eof, void *data)
+{
+	unsigned char b[4] = {0};
+	int ret = rk29_bl_sys_data(b);
+	if(ret >= 2 ) return sprintf(page, ret == 3 ? "%d %d %d\n" : "%d %d\n", b[0], b[1], b[2]);
+	else return sprintf(page, "0 0\n");
+}
+
+static int bright_write(struct file *file, const char *buffer,unsigned long count, void *data)
+{
+	int ret = -1;
+	int min, max, type = 0;
+	int num = sscanf(buffer, "%d %d %d", &min, &max, &type);
+	if(num >= 2 && max > min && max >= MIN_MAX) {
+		unsigned char b[4] = {(unsigned char)min, (unsigned char)max, (unsigned char)type};
+		b[num] = 0x55;
+		for(min = 0; min < num; min++) b[num] ^= b[min];
+		if(num == 3) {
+			//make sure b[2] != 0x55 ^ b[0] ^ b[1]
+			//compatible with old version
+			if(b[num] == 0) {
+				b[0] ^= 1;
+				b[num] ^= 1;
+			}
+			if(b[2] == 0) {
+				//clear data
+				b[0] = b[1] = 0;
+			}
+		}
+		if(sys_data_write(DATA_INDEX, sizeof(b), &b) == sizeof(b)) {
+			sys_data_ready = 0;
+			rk29_bl_set_brightness(rk29_bl);
+			printk("bright update to %d %d %d\n", b[0], b[1], b[2]);
+			ret = count;
+		}
+		else {
+			printk("bright:fail to store data");
+		}
+	}
+	else {
+		printk("bright:invalid brightness\n");
+	}
+	return ret;
+}
+
 static int rk29_bl_get_brightness(struct backlight_device *bl)
 {
 	u32 divh,div_total;
@@ -239,7 +345,7 @@ static int rk29_bl_get_brightness(struct backlight_device *bl)
 }
 
 static struct backlight_ops rk29_bl_ops = {
-	.update_status	= rk29_bl_update_status,
+	.update_status	= rk29_bl_set_brightness,
 	.get_brightness	= rk29_bl_get_brightness,
 };
 
@@ -263,7 +369,6 @@ static void rk29_bl_suspend(struct early_suspend *h)
 		rk29_bl_update_status(rk29_bl);
 		rk29_bl->props.brightness = brightness;
 	}
-
 }
 
 static void rk29_bl_resume(struct early_suspend *h)
@@ -300,6 +405,9 @@ void rk29_backlight_set(bool on)
 	return;
 }
 EXPORT_SYMBOL(rk29_backlight_set);
+#endif
+#ifdef CONFIG_BATTERY_RK30_ADC_FAC
+extern int adc_battery_notifier_call_chain(unsigned long val);
 #endif
 
 static int rk29_backlight_probe(struct platform_device *pdev)
@@ -377,7 +485,7 @@ static int rk29_backlight_probe(struct platform_device *pdev)
 
 	rk29_bl->props.power = FB_BLANK_UNBLANK;
 	rk29_bl->props.fb_blank = FB_BLANK_UNBLANK;
-	rk29_bl->props.brightness = BL_STEP / 2;
+	rk29_bl->props.brightness = env_get_u32("lcd_bl_def", BL_STEP / 2);
 	rk29_bl->props.state = BL_CORE_DRIVER1;		
 
 	schedule_delayed_work(&rk29_backlight_work, msecs_to_jiffies(rk29_bl_info->delay_ms));
@@ -388,8 +496,21 @@ static int rk29_backlight_probe(struct platform_device *pdev)
 	}
 
 	register_early_suspend(&bl_early_suspend);
+#ifdef CONFIG_BATTERY_RK30_ADC_FAC
+	adc_battery_notifier_call_chain(BACKLIGHT_ON);
+#endif
+	
+	{
+		struct proc_dir_entry * entry = create_proc_entry("bright", S_IRUGO|S_IWUGO, 0);
+		if (entry) {
+			entry->read_proc = bright_read;
+			entry->write_proc = bright_write;
+		} else {
+			printk("create proc bright failed");
+		}
+	}
 
-	printk("RK29 Backlight Driver Initialized.\n");
+	printk("RK29 Backlight Driver Initialized default brightness=%d.\n",rk29_bl->props.brightness);
 	return ret;
 }
 

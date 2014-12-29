@@ -90,6 +90,7 @@ enum {
 	PMIC_TYPE_ACT8931 =3,
 	PMIC_TYPE_ACT8846 =3,
 	PMIC_TYPE_RK808 =4,
+	PMIC_TYPE_AXP228 =5,
 	PMIC_TYPE_MAX,
 };
 extern __sramdata  int g_pmic_type;
@@ -98,7 +99,7 @@ extern __sramdata  int g_pmic_type;
 #define pmic_is_act8931()  (g_pmic_type == PMIC_TYPE_ACT8931)
 #define pmic_is_act8846()  (g_pmic_type == PMIC_TYPE_ACT8846)
 #define pmic_is_rk808()  (g_pmic_type == PMIC_TYPE_RK808)
-
+#define pmic_is_axp228() (g_pmic_type == PMIC_TYPE_AXP228)
 struct  pmu_info {
 	char		*name;
 	int		min_uv;
@@ -261,6 +262,8 @@ struct rk29_vmac_platform_data {
         int(*rmii_speed_switch)(int speed);
 };
 /* adc battery */
+#define LCDC_ON 0x0001
+#define BACKLIGHT_ON 0x0002
 struct rk30_adc_battery_platform_data {
 	int (*io_init)(void);
 	int (*io_deinit)(void);

@@ -42,6 +42,7 @@
 #include <linux/interrupt.h>
 #include <asm/irq.h>
 #include <linux/suspend.h>
+#include <mach/yfmach.h>
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h>
 
@@ -133,6 +134,37 @@ static const char bt_name[] =
         "bt_default"
 #endif
 ;
+
+// yftech
+struct wifi2btname {
+	const char * wifi_name;
+	const char * bt_name;
+};
+static struct wifi2btname wifi2bt [] = {
+	{"AP6330", "ap6330"},
+	{"AP6210", "ap6210"},
+	{"AIDC", "8723au"},
+	{"RTL8723AU", "8723au"},
+	{0, 0}
+};
+
+static const char * get_bt_name() {
+	const char * wifi_name = env_get_str("wifi_supproted", NULL);
+	const char * name = bt_name;
+
+	if (wifi_name) {
+		struct wifi2btname * p_wifi_2_bt = wifi2bt;
+		while(p_wifi_2_bt->wifi_name) {
+			if (0 == strcmp(p_wifi_2_bt->wifi_name, wifi_name)) {
+				name = p_wifi_2_bt->bt_name;
+				break;
+			}
+			p_wifi_2_bt++;
+		}
+	}
+	return name;
+}
+// end
 
 /*
  *  rfkill_rk_wake_host_irq - BT_WAKE_HOST 中断回调函数
@@ -284,6 +316,7 @@ void rfkill_rk_sleep_bt(bool sleep)
 #endif
 }
 EXPORT_SYMBOL(rfkill_rk_sleep_bt);
+int rk29sdk_bt_power(int on);
 
 static int rfkill_rk_set_power(void *data, bool blocked)
 {
@@ -296,6 +329,10 @@ static int rfkill_rk_set_power(void *data, bool blocked)
 
     DBG("Set blocked:%d\n", blocked);
 
+    if (!strcmp(rfkill->pdata->name, "8723au")) {
+        rk29sdk_bt_power(false == blocked ? 1 : 0);
+        return 0;
+    }
 	if (false == blocked) { 
         rfkill_rk_sleep_bt(BT_WAKEUP); // ensure bt is wakeup
 
@@ -312,7 +349,8 @@ static int rfkill_rk_set_power(void *data, bool blocked)
             msleep(20);
         }
 
-#if defined(CONFIG_AP6210)
+//#if defined(CONFIG_AP6210)
+if (!strcmp(rfkill->pdata->name, "ap6210")) {
         if (gpio_is_valid(rts->io))
         {
             if (rts->iomux.name)
@@ -331,7 +369,8 @@ static int rfkill_rk_set_power(void *data, bool blocked)
                 rk_mux_api_set(rts->iomux.name, rts->iomux.fmux);
             }
         }
-#endif
+}
+//#endif
 
     	LOG("bt turn on power\n");
 	} else {
@@ -510,7 +549,7 @@ static int rfkill_rk_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-    pdata->name = (char*)bt_name;
+    pdata->name = (char*)get_bt_name();
 
 	rfkill = kzalloc(sizeof(*rfkill), GFP_KERNEL);
 	if (!rfkill)

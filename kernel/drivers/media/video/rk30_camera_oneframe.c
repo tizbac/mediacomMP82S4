@@ -1465,6 +1465,8 @@ static int rk_camera_activate(struct rk_camera_dev *pcdev, struct soc_camera_dev
     */
 
     
+    struct soc_camera_link *icl = to_soc_camera_link(icd);
+    rk_camera_mclk_ctrl(icl->bus_id, 1, RK_SENSOR_24MHZ);
     //soft reset  the registers
     #if 0 //has somthing wrong when suspend and resume now
     if(IS_CIF0()){
@@ -1661,6 +1663,7 @@ static void rk_camera_remove_device(struct soc_camera_device *icd)
 	*/
     INIT_LIST_HEAD(&pcdev->capture);
 
+    rk_camera_mclk_ctrl((to_soc_camera_link(icd))->bus_id, 0, 0);
 	mutex_unlock(&camera_lock);
 	RKCAMERA_DG("%s exit\n",__FUNCTION__);
 
@@ -2134,6 +2137,8 @@ static int rk_camera_set_fmt(struct soc_camera_device *icd,
 	ret = v4l2_subdev_call(sd, video, s_mbus_fmt, &mf);
 	if (mf.code != xlate->code)
 		return -EINVAL;
+
+	msleep(100 + mf.width/10);
     
 	#ifdef CONFIG_VIDEO_RK29_WORK_IPP
 	if ((mf.width != usr_w) || (mf.height != usr_h)) {
@@ -2318,6 +2323,19 @@ static int rk_camera_try_fmt(struct soc_camera_device *icd,
 	mf.code		= xlate->code;
     /* ddl@rock-chips.com : It is query max resolution only. */
     if ((usr_w == 10000) && (usr_h == 10000)) {
+        struct rkcamera_platform_data *new_camera;
+        new_camera = pcdev->pdata->register_dev_new;
+        while (strstr(new_camera->dev_name,"end")==NULL) {
+            if (strcmp(dev_name(pcdev->icd->pdev), new_camera->dev_name) == 0) {
+                if(new_camera->resolution & 0xFFFF) {
+                    pix->width = (new_camera->resolution & 0xFF00) >> 4;
+                    pix->height = (new_camera->resolution & 0x00FF) << 4;
+                    return 0;
+                }
+                break;
+            }
+            new_camera++;
+        }
         mf.reserved[6] = 0xfefe5a5a;
     }
 

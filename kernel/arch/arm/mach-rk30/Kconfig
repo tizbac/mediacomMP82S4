@@ -145,6 +145,10 @@ config MACH_RK3168_86V
 
 config MACH_RK3168_86V_OLD
         bool "RK3168 86V  Old Board"
+
+config MACH_RK3168_YF
+	bool "RK3168 yf board"
+
 endchoice
 
 choice

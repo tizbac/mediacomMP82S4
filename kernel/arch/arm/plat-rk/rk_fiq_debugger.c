@@ -96,7 +96,8 @@ static int debug_getc(struct platform_device *pdev)
 
 	if (lsr & UART_LSR_BI || t->break_seen) {
 		t->break_seen = false;
-		return FIQ_DEBUGGER_BREAK;
+//		return FIQ_DEBUGGER_BREAK;
+		return FIQ_DEBUGGER_NO_CHAR;	// yftech
 	}
 
 	if (lsr & UART_LSR_DR)

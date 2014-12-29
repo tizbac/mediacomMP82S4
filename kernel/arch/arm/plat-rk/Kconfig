@@ -216,4 +216,9 @@ config RK_USB_DETECT_BY_OTG_BVALID
 	depends on USB_GADGET && (ARCH_RK2928 || ARCH_RK3188)
 	default y if ARCH_RK2928 || ARCH_RK3188
 
+config MACH_RK_YF
+	bool "YuanFeng RK board"
+	default y
+	depends on MACH_RK3168_YF || MACH_RK3188_YF
+
 endif

@@ -786,6 +786,7 @@ static void rk29_sdmmc_set_iomux_mmc0(unsigned int bus_width)
             #endif
             gpio_request(rksdmmc0_gpio_init.power_en_gpio.io,"sdmmc-power");
             gpio_direction_output(rksdmmc0_gpio_init.power_en_gpio.io, !(rksdmmc0_gpio_init.power_en_gpio.enable)); //power-off
+            rk29_sdmmc_gpio_open(0, 0);
 
         #if 0 //replace the power control into rk29_sdmmc_set_ios(); modifyed by xbw at 2012-08-12
             rk29_sdmmc_gpio_open(0, 0);

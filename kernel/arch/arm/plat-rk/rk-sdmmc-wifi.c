@@ -175,7 +175,7 @@ struct rksdmmc_gpio_wifi_moudle  rk_platform_wifi_gpio = {
             #endif
         },       
     #endif
-     
+    
     #ifdef RK30SDK_WIFI_GPIO_GPS_SYNC
     .gps_sync = {
             .io             = RK30SDK_WIFI_GPIO_GPS_SYNC,
@@ -395,26 +395,8 @@ static int __init rk29sdk_wifi_bt_gpio_control_init(void)
     return 0;
 }
 
-#if (defined(CONFIG_RTL8192CU) || defined(CONFIG_RTL8188EU) )//|| defined(CONFIG_RTL8723AU)) \	&& defined(CONFIG_ARCH_RK2928)
-
-static void rkusb_wifi_power(int on) {
- 
-
-		gpio_request(RK30_PIN0_PC6, "null");
-	if(on) {
-
-		//printk("%s:  enable\n", __func__);
-			gpio_direction_output(RK30_PIN0_PC6, 1);
-			gpio_set_value(RK30_PIN0_PC6, 1);
-		
-	} else {
-		//printk("%s:  disable\n", __func__);
-			gpio_direction_output(RK30_PIN0_PC6, 1);
-			gpio_set_value(RK30_PIN0_PC6, 0);
-	}
-	
-	udelay(100);
-}
+#if (defined(CONFIG_RTL8192CU) || defined(CONFIG_RTL8188EU) || defined(CONFIG_RTL8723AU)) \
+	&& defined(CONFIG_ARCH_RK2928)
 static int usbwifi_power_status = 1;
 int rk29sdk_wifi_power(int on)
 {
@@ -435,7 +417,9 @@ int rk29sdk_wifi_power(int on)
         return 0;
 }
 #else
-int rk29sdk_wifi_power(int on)
+static int wifi_on = 0;
+static int bt_on = 0;
+static int rk29sdk_wab_power(int on)
 {
         pr_info("%s: %d\n", __func__, on);
         if (on){
@@ -475,6 +459,29 @@ int rk29sdk_wifi_power(int on)
 //        rk29sdk_wifi_power_state = on;
         return 0;
 }
+int rk29sdk_wifi_power(int on)
+{
+	int old = wifi_on | bt_on;
+	wifi_on = on;
+	on = wifi_on | bt_on;
+	if(old != on) {
+		rk29sdk_wab_power(on);
+	}
+}
+int rk29sdk_bt_power(int on)
+{
+	int old = wifi_on | bt_on;
+	bt_on = on;
+	on = wifi_on | bt_on;
+	if(old != on) {
+		rk29sdk_wab_power(on);
+	}
+}
+int __init rk29sdk_power_off()
+{
+	rk29sdk_wab_power(0);
+}
+arch_initcall(rk29sdk_power_off);
 #endif
 EXPORT_SYMBOL(rk29sdk_wifi_power);
 
@@ -505,7 +512,7 @@ EXPORT_SYMBOL(rk29sdk_wifi_set_carddetect);
 static struct resource resources[] = {
 	{
 		.start = WIFI_HOST_WAKE,
-		.flags = IORESOURCE_IRQ,
+		.flags = IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHLEVEL | IORESOURCE_IRQ_SHAREABLE,
 		.name = "bcmdhd_wlan_irq",
 	},
 };

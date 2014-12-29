@@ -162,7 +162,8 @@ static int rk_hifi_hw_params(struct snd_pcm_substream *substream,
 	}
 	#endif
 
-	/*Set the system clk for codec*/
+	/* Set the system clk for codec
+	   mclk will be setted in set_sysclk of codec_dai*/
 	ret = snd_soc_dai_set_sysclk(codec_dai, 0, pll_out, SND_SOC_CLOCK_IN);
 	if (ret < 0) {
 		DBG("rk_hifi_hw_params:failed to set the sysclk for codec side\n");
@@ -170,7 +171,6 @@ static int rk_hifi_hw_params(struct snd_pcm_substream *substream,
 	}
 
 __setdiv:
-	snd_soc_dai_set_sysclk(cpu_dai, 0, pll_out, 0);
 	snd_soc_dai_set_clkdiv(cpu_dai, ROCKCHIP_DIV_BCLK, (pll_out / div)/params_rate(params)-1);
 	snd_soc_dai_set_clkdiv(cpu_dai, ROCKCHIP_DIV_MCLK, div - 1);
 
@@ -282,12 +282,16 @@ static struct snd_soc_card snd_soc_card_rk = {
 
 static struct platform_device *rk_snd_device;
 
+int lcd_supported(char * name);
 static int __init audio_card_init(void)
 {
 	int ret =0;
 
 	DBG("Enter::%s----%d\n",__FUNCTION__,__LINE__);
 
+	if(!lcd_supported("rkhdmi616")) {
+		return -ENODEV;
+	}
 	rk_snd_device = platform_device_alloc("soc-audio", -1);
 	if (!rk_snd_device) {
 		  printk("platform device allocation failed\n");

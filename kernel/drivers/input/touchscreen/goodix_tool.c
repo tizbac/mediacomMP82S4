@@ -16,10 +16,11 @@
  * Version:1.2
  *        V1.0:2012/05/01,create file.
  *        V1.2:2012/06/08,modify some warning.
+ *        V1.4:2012/08/28,modified to support GT9XX
  *
  */
 
-#include "gt813_827_828.h"
+#include "gt9xx.h"
 
 //#define IC_TYPE_NAME        "GT813" //Default
 #define DATA_LENGTH_UINT    512
@@ -245,7 +246,7 @@ static u8 relation(u8 src, u8 dst, u8 rlt)
 
     case 1:
         ret = (src == dst) ? true : false;
-        GTP_DEBUG("equal:src:0x%02x   dst:0x%02x   ret:%d\n", src, dst, (s32)ret);
+        GTP_DEBUG("equal:src:0x%02x   dst:0x%02x   ret:%d.", src, dst, (s32)ret);
         break;
 
     case 2:
@@ -288,7 +289,7 @@ static u8 comfirm(void)
 //    memcpy(&buf[GTP_ADDR_LENGTH - cmd_head.addr_len], &cmd_head.flag_addr, cmd_head.addr_len);
 //    memcpy(buf, &cmd_head.flag_addr, cmd_head.addr_len);//Modified by Scott, 2012-02-17
     memcpy(buf, cmd_head.flag_addr, cmd_head.addr_len);
-
+   
     for (i = 0; i < cmd_head.times; i++)
     {
         if (tool_i2c_read(buf, 1) <= 0)
@@ -298,8 +299,8 @@ static u8 comfirm(void)
         }
         if (true == relation(buf[GTP_ADDR_LENGTH], cmd_head.flag_val, cmd_head.flag_relation))
         {
-            GTP_DEBUG("value at flag addr:0x%02x\n", buf[GTP_ADDR_LENGTH]);
-            GTP_DEBUG("flag value:0x%02x\n", cmd_head.flag_val);
+            GTP_DEBUG("value at flag addr:0x%02x.", buf[GTP_ADDR_LENGTH]);
+            GTP_DEBUG("flag value:0x%02x.", cmd_head.flag_val);
             break;
         }
 
@@ -325,36 +326,36 @@ Output:
 ********************************************************/
 static s32 goodix_tool_write(struct file *filp, const char __user *buff, unsigned long len, void *data)
 {
-    u64 ret = 0;
+    s32 ret = 0;
     GTP_DEBUG_FUNC();
     GTP_DEBUG_ARRAY((u8*)buff, len);
     
     ret = copy_from_user(&cmd_head, buff, CMD_HEAD_LENGTH);
-    if(!ret)
+    if(ret)
     {
         GTP_ERROR("copy_from_user failed.");
     }
 
-    GTP_DEBUG("wr  :0x%02x\n", cmd_head.wr);
-    GTP_DEBUG("flag:0x%02x\n", cmd_head.flag);
-    GTP_DEBUG("flag addr:0x%02x%02x\n", cmd_head.flag_addr[0], cmd_head.flag_addr[1]);
-    GTP_DEBUG("flag val:0x%02x\n", cmd_head.flag_val);
-    GTP_DEBUG("flag rel:0x%02x\n", cmd_head.flag_relation);
-    GTP_DEBUG("circle  :%d\n", (s32)cmd_head.circle);
-    GTP_DEBUG("times   :%d\n", (s32)cmd_head.times);
-    GTP_DEBUG("retry   :%d\n", (s32)cmd_head.retry);
-    GTP_DEBUG("delay   :%d\n", (s32)cmd_head.delay);
-    GTP_DEBUG("data len:%d\n", (s32)cmd_head.data_len);
-    GTP_DEBUG("addr len:%d\n", (s32)cmd_head.addr_len);
-    GTP_DEBUG("addr:0x%02x%02x\n", cmd_head.addr[0], cmd_head.addr[1]);
-    GTP_DEBUG("len:%d\n", (s32)len);
-    GTP_DEBUG("buf[20]:0x%02x\n", buff[CMD_HEAD_LENGTH]);
+    GTP_DEBUG("wr  :0x%02x.", cmd_head.wr);
+    GTP_DEBUG("flag:0x%02x.", cmd_head.flag);
+    GTP_DEBUG("flag addr:0x%02x%02x.", cmd_head.flag_addr[0], cmd_head.flag_addr[1]);
+    GTP_DEBUG("flag val:0x%02x.", cmd_head.flag_val);
+    GTP_DEBUG("flag rel:0x%02x.", cmd_head.flag_relation);
+    GTP_DEBUG("circle  :%d.", (s32)cmd_head.circle);
+    GTP_DEBUG("times   :%d.", (s32)cmd_head.times);
+    GTP_DEBUG("retry   :%d.", (s32)cmd_head.retry);
+    GTP_DEBUG("delay   :%d.", (s32)cmd_head.delay);
+    GTP_DEBUG("data len:%d.", (s32)cmd_head.data_len);
+    GTP_DEBUG("addr len:%d.", (s32)cmd_head.addr_len);
+    GTP_DEBUG("addr:0x%02x%02x.", cmd_head.addr[0], cmd_head.addr[1]);
+    GTP_DEBUG("len:%d.", (s32)len);
+    GTP_DEBUG("buf[20]:0x%02x.", buff[CMD_HEAD_LENGTH]);
     
     if (1 == cmd_head.wr)
     {
       //  copy_from_user(&cmd_head.data[cmd_head.addr_len], &buff[CMD_HEAD_LENGTH], cmd_head.data_len);
         ret = copy_from_user(&cmd_head.data[GTP_ADDR_LENGTH], &buff[CMD_HEAD_LENGTH], cmd_head.data_len);
-        if(!ret)
+        if(ret)
         {
             GTP_ERROR("copy_from_user failed.");
         }
@@ -392,7 +393,13 @@ static s32 goodix_tool_write(struct file *filp, const char __user *buff, unsigne
     }
     else if (3 == cmd_head.wr)  //Write ic type
     {
+	ret = copy_from_user(&cmd_head.data[0], &buff[CMD_HEAD_LENGTH], cmd_head.data_len);
+        if(ret)
+        {
+            GTP_ERROR("copy_from_user failed.");
+        }
         memcpy(IC_TYPE, cmd_head.data, cmd_head.data_len);
+
         register_i2c_func();
 
         return cmd_head.data_len + CMD_HEAD_LENGTH;
@@ -415,6 +422,26 @@ static s32 goodix_tool_write(struct file *filp, const char __user *buff, unsigne
 
         return CMD_HEAD_LENGTH;
     }
+    else if(17 == cmd_head.wr)
+    {
+        struct goodix_ts_data *ts = i2c_get_clientdata(gt_client);
+        ret = copy_from_user(&cmd_head.data[GTP_ADDR_LENGTH], &buff[CMD_HEAD_LENGTH], cmd_head.data_len);
+        if(ret)
+        {
+            GTP_DEBUG("copy_from_user failed.");
+        }
+        if(cmd_head.data[GTP_ADDR_LENGTH])
+        {
+            GTP_DEBUG("gtp enter rawdiff.");
+            ts->gtp_rawdiff_mode = true;
+        }
+        else
+        {
+            ts->gtp_rawdiff_mode = false;
+            GTP_DEBUG("gtp leave rawdiff.");
+        }
+        return CMD_HEAD_LENGTH;
+    }
 #ifdef UPDATE_FUNCTIONS
     else if (11 == cmd_head.wr)//Enter update mode!
     {
@@ -429,6 +456,8 @@ static s32 goodix_tool_write(struct file *filp, const char __user *buff, unsigne
     }
     else if (15 == cmd_head.wr) //Update firmware!
     {
+        show_len = 0;
+        total_len = 0;
         memset(cmd_head.data, 0, cmd_head.data_len + 1);
         memcpy(cmd_head.data, &buff[CMD_HEAD_LENGTH], cmd_head.data_len);
 
@@ -479,8 +508,8 @@ static s32 goodix_tool_read( char *page, char **start, off_t off, int count, int
 
         memcpy(cmd_head.data, cmd_head.addr, cmd_head.addr_len);
 
-        GTP_DEBUG("[CMD HEAD DATA] ADDR:0x%02x%02x\n", cmd_head.data[0], cmd_head.data[1]);
-        GTP_DEBUG("[CMD HEAD ADDR] ADDR:0x%02x%02x\n", cmd_head.addr[0], cmd_head.addr[1]);
+        GTP_DEBUG("[CMD HEAD DATA] ADDR:0x%02x%02x.", cmd_head.data[0], cmd_head.data[1]);
+        GTP_DEBUG("[CMD HEAD ADDR] ADDR:0x%02x%02x.", cmd_head.addr[0], cmd_head.addr[1]);
         
         if (cmd_head.delay)
         {
@@ -508,7 +537,7 @@ static s32 goodix_tool_read( char *page, char **start, off_t off, int count, int
             memcpy(&page[loc], &cmd_head.data[GTP_ADDR_LENGTH], len);
             loc += len;
 
-            //GTP_DEBUG_ARRAY(&cmd_head.data[GTP_ADDR_LENGTH], len);
+            GTP_DEBUG_ARRAY(&cmd_head.data[GTP_ADDR_LENGTH], len);
             GTP_DEBUG_ARRAY(page, len);
         }
     }
@@ -518,7 +547,7 @@ static s32 goodix_tool_read( char *page, char **start, off_t off, int count, int
        // memcpy(page, "GT818", 5);
       //  page[5] = 0;
 
-        GTP_DEBUG("Return ic type:%s len:%d\n", page, (s32)cmd_head.data_len);
+        GTP_DEBUG("Return ic type:%s len:%d.", page, (s32)cmd_head.data_len);
         return cmd_head.data_len;
         //return sizeof(IC_TYPE_NAME);
     }

@@ -1,0 +1,87 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;YFMP18;;;;;;;;;;;;;;;;;;;;;;;;
+;@ env_size = 0x1000
+;@ env_magic = 0x5F454E56 ;_env
+;@  RK30_PIN%d_P%C%d = 160 32 8 1
+;@ GPIO_INVALID = 0xFFFFFFFF
+;@ mode = clear
+
+ctp_supproted = ft5x06 byd693x ilitek gt9xx
+ctp_ilitek_use_interupt=1
+ctp_ft5x_ts_x_flag=0
+ctp_ft5x_ts_y_flag=0
+ctp_gt9xx_id = 0x00000018
+
+acc_dir = 7
+
+wifi_supproted = AP6330
+
+cam_name0 = sp2518_mp18
+cam_addr0= 0x00000030
+cam_flag0 = 4
+cam_pd0 = RK30_PIN3_PB4
+
+cam_name2 = gc2035_mp18
+cam_addr2 = 0x0000003c
+cam_flag2 = 4
+cam_pd2 = RK30_PIN3_PB5
+
+cam_name4 =BF3A20
+cam_addr4 = 0x0000006E
+cam_flag4 = 4
+cam_pd4 = RK30_PIN3_PB5
+
+cam_name1 = sp0718
+cam_addr1= 0x00000021
+cam_flag1 = 4
+cam_pd1 = RK30_PIN3_PB5
+
+cam_name3 = gc0308
+cam_flag3 = 4
+cam_addr3 = 0x00000021
+cam_pd3 = RK30_PIN3_PB4
+
+cam_name5 = BF3703
+cam_flag5 = 4
+cam_addr5 = 0x0000006E
+cam_pd5 = RK30_PIN3_PB4
+
+lcd_h_pw = 10
+lcd_h_bp = 150
+lcd_h_vd = 1024
+lcd_h_fp = 160
+
+lcd_v_pw = 5
+lcd_v_bp = 18
+lcd_v_vd = 768
+lcd_v_fp = 15
+
+lcd_width = 160
+lcd_height = 120
+lcd_out_face = 0x00000021
+
+volume_in_ac = 3
+
+power_max_vol = 4750
+power_bat_rdc = 98
+power_vol_coff1 = 307500 ;4800 : 1023
+power_vol_coff2 = 0
+power_ac_gpio = RK30_PIN0_PB2
+power_ac_level = 0
+power_charge_gpio = RK30_PIN0_PA6
+power_switch_gpio = RK30_PIN0_PC7
+power_status_coff1 = 15500
+power_status_coff2 = 58980
+power_cur_channel = 2
+power_v2c_table = 3600, 0, 3674, 4, 3709, 13, 3755, 21, 3813, 44, 3859, 56, 4020, 84, 4140, 100
+
+;@ mode = append
+init = on init
+init = setprop persist.sys.language zh
+init = setprop persist.sys.country CN
+init = setprop persist.sys.timezone Asia/Shanghai
+init = setprop ro.product.model MP18
+init = setprop ro.product.brand yftech
+init = setprop ro.product.name mp18
+init = setprop ro.product.device mp18
+init = setprop ro.rk.bt_enable true
+

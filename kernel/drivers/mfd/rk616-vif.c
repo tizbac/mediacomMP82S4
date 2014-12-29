@@ -157,7 +157,8 @@ int rk616_vif_cfg(struct mfd_rk616 *rk616,rk_screen *screen,int id)
 	
 	if(pll_use_mclk12m)
 	{
-		clk_set_rate(rk616->mclk, 12000000);
+		//clk_set_rate(rk616->mclk, 12000000);
+		rk616_mclk_set_rate(rk616->mclk,12000000);
 	}
 
 	
@@ -506,9 +507,15 @@ static int rk616_lcd0_input_lcd1_unused_cfg(struct mfd_rk616 *rk616,rk_screen *s
 		route->vif0_en      = 1;
 		route->vif0_clk_sel = VIF0_CLKIN_SEL(VIF_CLKIN_SEL_PLL0);
 		route->sclin_sel    = SCL_IN_SEL(SCL_SEL_VIF0); //from vif0
+#if 0
 		route->scl_en       = 1;
 		route->sclk_sel     = SCLK_SEL(SCLK_SEL_PLL1);
 		route->dither_sel   = DITHER_IN_SEL(DITHER_SEL_SCL); //dither from sclaer
+#else
+		route->scl_en       = 0;
+		route->sclk_sel     = SCLK_SEL(SCLK_SEL_PLL1);
+		route->dither_sel   = DITHER_IN_SEL(HDMI_CLK_SEL_VIF0); //dither from sclaer
+#endif
 		route->hdmi_sel     = HDMI_IN_SEL(HDMI_IN_SEL_VIF0);//from vif0
 		route->hdmi_clk_sel = HDMI_CLK_SEL(HDMI_CLK_SEL_VIF0);	
 	}
@@ -781,7 +788,7 @@ int rk616_set_vif(struct mfd_rk616 *rk616,rk_screen *screen,bool connect)
 	{
 		rk616_vif_disable(rk616,0);
 		rk616_vif_disable(rk616,1);
-		clk_set_rate(rk616->mclk, 11289600); 
+                rk616_mclk_set_rate(rk616->mclk, 11289600);
 		return 0;
 	}
 #if defined(CONFIG_ONE_LCDC_DUAL_OUTPUT_INF)

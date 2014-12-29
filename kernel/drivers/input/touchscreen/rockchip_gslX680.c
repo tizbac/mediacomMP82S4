@@ -9,7 +9,7 @@
  *  published by the Free Software Foundation.
  */
 
-dfsdffsdfd
+
 #include <linux/module.h>
 #include <linux/delay.h>
 #include <linux/earlysuspend.h>

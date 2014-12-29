@@ -45,11 +45,16 @@ struct act8846 {
 	int num_regulators;
 	struct regulator_dev **rdev;
 	struct early_suspend act8846_suspend;
+	// yftech
+	struct delayed_work count_reset_work;
+	int reset_cnt;
+	// end
 };
 
 struct act8846 *g_act8846;
 
-static u8 act8846_reg_read(struct act8846 *act8846, u8 reg);
+u8 act8846_reg_read(struct act8846 *act8846, u8 reg);
+int act8846_reg_write(struct act8846 *act8846, u8 reg, u8 val);
 static int act8846_set_bits(struct act8846 *act8846, u8 reg, u16 mask, u16 val);
 
 
@@ -631,7 +636,7 @@ static int act8846_i2c_write(struct i2c_client *i2c, char reg, int count, const 
 	return ret;	
 }
 
-static u8 act8846_reg_read(struct act8846 *act8846, u8 reg)
+u8 act8846_reg_read(struct act8846 *act8846, u8 reg)
 {
 	u16 val = 0;
 
@@ -644,6 +649,17 @@ static u8 act8846_reg_read(struct act8846 *act8846, u8 reg)
 	mutex_unlock(&act8846->io_lock);
 
 	return val & 0xff;	
+}
+
+int act8846_reg_write(struct act8846 *act8846, u8 reg, u8 val)
+{
+	int ret;
+
+	mutex_lock(&act8846->io_lock);
+	ret = act8846_i2c_write(act8846->i2c, reg, 1, val);
+	mutex_unlock(&act8846->io_lock);
+
+	return ret;	
 }
 
 static int act8846_set_bits(struct act8846 *act8846, u8 reg, u16 mask, u16 val)
@@ -751,6 +767,19 @@ __weak void act8846_early_suspend(struct early_suspend *h) {}
 __weak void act8846_late_resume(struct early_suspend *h) {}
 #endif
 
+// yftech
+static void count_reset_work_fun (struct work_struct *work)
+{
+	struct act8846 *act8846 = container_of((struct delayed_work *)work, 
+		struct act8846, count_reset_work);
+
+	act8846_reg_read(act8846, 0xc2);
+
+	if (++act8846->reset_cnt < 6)
+		schedule_delayed_work(&act8846->count_reset_work, msecs_to_jiffies(2000));
+}
+// end
+
 static int __devinit act8846_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 {
 	struct act8846 *act8846;	
@@ -769,8 +798,12 @@ static int __devinit act8846_i2c_probe(struct i2c_client *i2c, const struct i2c_
 	ret = act8846_reg_read(act8846,0x22);
 	if ((ret < 0) || (ret == 0xff)){
 		printk("The device is not act8846 \n");
-		return 0;
+		kfree(act8846);
+		return -ENODEV;
 	}
+
+	INIT_DELAYED_WORK(&act8846->count_reset_work, count_reset_work_fun);
+	schedule_delayed_work(&act8846->count_reset_work, msecs_to_jiffies(1));
 
 	ret = act8846_set_bits(act8846, 0xf4,(0x1<<7),(0x0<<7));
 	if (ret < 0) {
@@ -794,7 +827,7 @@ static int __devinit act8846_i2c_probe(struct i2c_client *i2c, const struct i2c_
 	act8846->act8846_suspend.level = EARLY_SUSPEND_LEVEL_DISABLE_FB + 1,
 	register_early_suspend(&act8846->act8846_suspend);
 	#endif
-	
+
 	return 0;
 
 err:

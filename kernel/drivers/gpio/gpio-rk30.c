@@ -64,6 +64,7 @@ struct rk30_gpio_bank {
 	struct clk *clk;
 	u32 suspend_wakeup;
 	u32 saved_wakeup;
+	u32 both;
 	spinlock_t lock;
 };
 
@@ -175,24 +176,28 @@ static void GPIOAckIntr(void __iomem *regbase, unsigned int bit)
 	rk30_gpio_bit_op(regbase, GPIO_PORTS_EOI, bit, 1);
 }
 
-static void GPIOSetIntrType(void __iomem *regbase, unsigned int bit, eGPIOIntType_t type)
+static void GPIOSetIntrType(void __iomem *regbase, unsigned int bit, unsigned int type)
 {
 	switch (type) {
-	case GPIOLevelLow:
+	case IRQ_TYPE_LEVEL_LOW:
 		rk30_gpio_bit_op(regbase, GPIO_INT_POLARITY, bit, 0);
 		rk30_gpio_bit_op(regbase, GPIO_INTTYPE_LEVEL, bit, 0);
 		break;
-	case GPIOLevelHigh:
+	case IRQ_TYPE_LEVEL_HIGH:
 		rk30_gpio_bit_op(regbase, GPIO_INTTYPE_LEVEL, bit, 0);
 		rk30_gpio_bit_op(regbase, GPIO_INT_POLARITY, bit, 1);
 		break;
-	case GPIOEdgelFalling:
+	case IRQ_TYPE_EDGE_FALLING:
 		rk30_gpio_bit_op(regbase, GPIO_INTTYPE_LEVEL, bit, 1);
 		rk30_gpio_bit_op(regbase, GPIO_INT_POLARITY, bit, 0);
 		break;
-	case GPIOEdgelRising:
+	case IRQ_TYPE_EDGE_RISING:
 		rk30_gpio_bit_op(regbase, GPIO_INTTYPE_LEVEL, bit, 1);
 		rk30_gpio_bit_op(regbase, GPIO_INT_POLARITY, bit, 1);
+		break;
+	case IRQ_TYPE_EDGE_BOTH:
+		rk30_gpio_bit_op(regbase, GPIO_INTTYPE_LEVEL, bit, 1);
+		rk30_gpio_bit_op(regbase, GPIO_INT_POLARITY, bit, GPIOGetPinLevel(regbase, bit) ? 0 : 1);
 		break;
 	}
 }
@@ -201,21 +206,17 @@ static int rk30_gpio_irq_set_type(struct irq_data *d, unsigned int type)
 {
 	struct rk30_gpio_bank *bank = irq_data_get_irq_chip_data(d);
 	u32 bit = gpio_to_bit(irq_to_gpio(d->irq));
-	eGPIOIntType_t int_type;
 	unsigned long flags;
 
 	switch (type) {
 	case IRQ_TYPE_EDGE_RISING:
-		int_type = GPIOEdgelRising;
-		break;
 	case IRQ_TYPE_EDGE_FALLING:
-		int_type = GPIOEdgelFalling;
-		break;
 	case IRQ_TYPE_LEVEL_HIGH:
-		int_type = GPIOLevelHigh;
-		break;
 	case IRQ_TYPE_LEVEL_LOW:
-		int_type = GPIOLevelLow;
+		bank->both &= ~bit;
+		break;
+	case IRQ_TYPE_EDGE_BOTH:
+		bank->both |= bit;
 		break;
 	default:
 		return -EINVAL;
@@ -224,7 +225,7 @@ static int rk30_gpio_irq_set_type(struct irq_data *d, unsigned int type)
 	spin_lock_irqsave(&bank->lock, flags);
 	//设置为中断之前，必须先设置为输入状态
 	GPIOSetPinDirection(bank->regbase, bit, GPIO_IN);
-	GPIOSetIntrType(bank->regbase, bit, int_type);
+	GPIOSetIntrType(bank->regbase, bit, type);
 	spin_unlock_irqrestore(&bank->lock, flags);
 
 	if (type & (IRQ_TYPE_LEVEL_LOW | IRQ_TYPE_LEVEL_HIGH))
@@ -429,7 +430,7 @@ static void rk30_gpio_irq_handler(unsigned int irq, struct irq_desc *desc)
 	struct irq_chip *chip = irq_desc_get_chip(desc);
 	unsigned gpio_irq;
 	u32 isr, ilr;
-	unsigned pin;
+	unsigned pin, bit;
 	unsigned unmasked = 0;
 
 	chained_irq_enter(chip, desc);
@@ -441,17 +442,21 @@ static void rk30_gpio_irq_handler(unsigned int irq, struct irq_desc *desc)
 
 	while (isr) {
 		pin = fls(isr) - 1;
+		bit = 1 << pin;
 		/* if gpio is edge triggered, clear condition
 		 * before executing the hander so that we don't
 		 * miss edges
                  */
-		if (ilr & (1 << pin)) {
+		if (ilr & bit) {
+			if(bank->both & bit) {
+				rk30_gpio_bit_op(bank->regbase, GPIO_INT_POLARITY, bit, GPIOGetPinLevel(bank->regbase, bit) ? 0 : 1);
+			}
 			unmasked = 1;
 			chained_irq_exit(chip, desc);
 		}
 
 		generic_handle_irq(gpio_irq + pin);
-		isr &= ~(1 << pin);
+		isr &= ~bit;
 	}
 
 	if (!unmasked)
@@ -543,6 +548,14 @@ static void rk30_gpio_resume(void)
 		/* keep enable for resume irq */
 		isr = __raw_readl(bank->regbase + GPIO_INT_STATUS);
 		__raw_writel(bank->saved_wakeup | (bank->suspend_wakeup & isr), bank->regbase + GPIO_INTEN);
+		if(bank->both) {
+			unsigned bit;
+			for (bit = 1; bit; bit <<= 1) {
+				if(bank->both & bit) {
+					rk30_gpio_bit_op(bank->regbase, GPIO_INT_POLARITY, bit, GPIOGetPinLevel(bank->regbase, bit) ? 0 : 1);
+				}
+			}
+		}
 	}
 
 	rk30_setgpio_resume_board();

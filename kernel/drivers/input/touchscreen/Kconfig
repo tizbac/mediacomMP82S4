@@ -20,14 +20,7 @@ config TOUCHSCREEN_GSLX680
 config TOUCHSCREEN_GSLX680_RK3168
 		tristate "gslX680 rk3168 touchscreen panel support "
 		depends on I2C2_RK29 || I2C2_RK30
-		
-config TOUCHSCREEN_GSLX680_RK3188
-		tristate "gslX680 rk3188 touchscreen panel support "
-		depends on I2C2_RK29 || I2C2_RK30
-		
-config TOUCHSCREEN_GT813
-		tristate "GT813 touchscreen panel support "
-		depends on I2C2_RK29 || I2C2_RK30
+
 config TOUCHSCREEN_XPT2046_SPI
 	tristate "XPT2046 based touchscreens:SPI Interface"
 	depends on SPIM_RK29
@@ -985,45 +978,6 @@ config LAIBAO_TS
 	depends on I2C2_RK29
 	help
 	  RK29 LAIBAO touchscreen
-	  
-config TOUCHSCREEN_SWAP_X
-	tristate "SWAP_X based touchscreens"
-	depends on I2C2_RK29 || I2C2_RK30
-	
-config TOUCHSCREEN_SWAP_Y
-	tristate "SWAP_Y based touchscreens"
-	depends on I2C2_RK29 || I2C2_RK30
-	
-config TOUCHSCREEN_TP_7inch
-	tristate "TP_7inch based touchscreens"
-	depends on I2C2_RK29 || I2C2_RK30
-
-config TOUCHSCREEN_TP_JY_7inch
-	tristate "TP_JY_7inch based touchscreens"
-	depends on I2C2_RK29 || I2C2_RK30
-		
-config TOUCHSCREEN_TP_5inch
-	tristate "TP_5inch based touchscreens"
-	depends on I2C2_RK29 || I2C2_RK30
-	
-config TOUCHSCREEN_TP_YLP_7inch
-	tristate "TP_YLP_7inch based touchscreens"
-	depends on I2C2_RK29 || I2C2_RK30
-
-config TOUCHSCREEN_TP_8inch
-	tristate "TP_YLP_8inch based touchscreens"
-	depends on I2C2_RK29 || I2C2_RK30
-
-
-
-config TOUCHSCREEN_TP_9p7inch
-	tristate "TP_9p7inch based touchscreens"
-	depends on I2C2_RK29 || I2C2_RK30
-	
-config TOUCHSCREEN_TP_10p1inch
-	tristate "TP_10p1inch based touchscreens"
-	depends on I2C2_RK29 || I2C2_RK30
-	
 
 config TOUCHSCREEN_GT801_IIC
 	tristate "GT801_IIC based touchscreens"

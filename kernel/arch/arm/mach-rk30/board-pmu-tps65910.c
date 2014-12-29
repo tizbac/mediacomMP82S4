@@ -11,11 +11,28 @@
 
 extern int platform_device_register(struct platform_device *pdev);
 
+static struct tps65910 * s_tps65910;
+
+static int tps65910_data_read(u8 index)
+{
+	if(s_tps65910 == 0) return -ENODEV;
+	if(index >= 5) return -EINVAL;
+	return tps65910_reg_read(s_tps65910, index + TPS65910_BCK1);
+}
+
+static int tps65910_data_write(u8 index, u8 value)
+{
+	if(s_tps65910 == 0) return -ENODEV;
+	if(index >= 5) return -EINVAL;
+	return tps65910_reg_write(s_tps65910, index + TPS65910_BCK1, value);
+}
+
 int tps65910_pre_init(struct tps65910 *tps65910){
 
 	int val = 0;
 	int i 	= 0;
 	int err = -1;
+	s_tps65910 = tps65910;
 		
 	printk("%s,line=%d\n", __func__,__LINE__);	
 	
@@ -223,7 +240,7 @@ int tps65910_pre_init(struct tps65910 *tps65910){
                 return val;
         }
 	
-	val |= 0x0b;
+	val |= 0x2b;
 	err = tps65910_reg_write(tps65910, TPS65910_SLEEP_SET_LDO_OFF, val);
 	if (err) {
 		printk(KERN_ERR "Unable to read TPS65910 Reg at offset 0x%x= \
@@ -271,6 +288,8 @@ int tps65910_post_init(struct tps65910 *tps65910)
 	struct regulator *dcdc;
 	struct regulator *ldo;
 	int i=0;
+	char * found;
+	const char * disabled = env_get_str("power_disabled_reg", "act_ldo3,act_ldo8,");
 	printk("%s,line=%d\n", __func__,__LINE__);
 
 	g_pmic_type = PMIC_TYPE_TPS65910;
@@ -295,6 +314,10 @@ int tps65910_post_init(struct tps65910 *tps65910)
 	ldo =regulator_get(NULL, tps65910_ldo_info[i].name);
 	regulator_set_voltage(ldo, tps65910_ldo_info[i].min_uv, tps65910_ldo_info[i].max_uv);
 	regulator_enable(ldo);
+	found = strstr(disabled, act8846_ldo_info[i].name);
+	if(found && found[strlen(act8846_ldo_info[i].name)] == ',') {
+		regulator_disable(ldo);
+	}
 	//printk("%s  %s =%dmV end\n", __func__,tps65910_dcdc_info[i].name, regulator_get_voltage(ldo));
 	regulator_put(ldo);
 	}
@@ -322,7 +345,7 @@ static struct regulator_consumer_supply tps65910_smps2_supply[] = {
 	{
 		.supply = "vdd2",
 	},
-	#if defined(CONFIG_MACH_RK3168_86V)
+	#if defined(CONFIG_SOC_RK3168)
 	{
                 .supply = "vdd_cpu",
         },
@@ -340,7 +363,7 @@ static struct regulator_consumer_supply tps65910_smps4_supply[] = {
 };
 static struct regulator_consumer_supply tps65910_ldo1_supply[] = {
 	{
-		.supply = "vdig1",
+		.supply = "act_ldo3",
 	},
 };
 static struct regulator_consumer_supply tps65910_ldo2_supply[] = {
@@ -351,7 +374,7 @@ static struct regulator_consumer_supply tps65910_ldo2_supply[] = {
 
 static struct regulator_consumer_supply tps65910_ldo3_supply[] = {
 	{
-		.supply = "vaux1",
+		.supply = "act_ldo8",
 	},
 };
 static struct regulator_consumer_supply tps65910_ldo4_supply[] = {

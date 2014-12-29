@@ -7,7 +7,7 @@
 
 
 /* Base */
-#if 0//def CONFIG_RK610_LVDS
+#ifdef CONFIG_RK610_LVDS
 #define SCREEN_TYPE	 	SCREEN_LVDS
 #else
 #define SCREEN_TYPE	    	SCREEN_RGB
@@ -15,11 +15,10 @@
 #define LVDS_FORMAT      	LVDS_8BIT_1
 
 #define OUT_FACE		OUT_P888 
-#define DCLK			60000000        // 65000000
+#define DCLK			50000000        // 65000000
 #define LCDC_ACLK        	312000000//312000000           //29 lcdc axi DMA ÆµÂÊ
 
 /* Timing */
-/*
 #define H_PW			20
 #define H_BP			20
 #define H_VD			1024
@@ -29,27 +28,12 @@
 #define V_BP			2
 #define V_VD			600
 #define V_FP			34
-*/
-
-#define H_PW			10
-#define H_BP			140
-#define H_VD			1024
-#define H_FP			160
-
-#define V_PW			3
-#define V_BP			20
-#define V_VD			600
-#define V_FP			12
-
-
-
-
 
 #define LCD_WIDTH       154//1024
-#define LCD_HEIGHT      85  //91//600
+#define LCD_HEIGHT      91//600
 /* Other */
 #ifdef CONFIG_RK610_LVDS
-#define DCLK_POL	0
+#define DCLK_POL	1
 #else
 #define DCLK_POL	0
 #endif
@@ -132,7 +116,7 @@ int dsp_lut[256] ={
 #define S1_V_ST			5
 
 //1280*720*60
-#define S2_OUT_CLK		SCALE_RATE(74250000,50625000)
+#define S2_OUT_CLK		SCALE_RATE(74250000,50625000)  
 #define S2_H_PW			10
 #define S2_H_BP			10
 #define S2_H_VD			1024

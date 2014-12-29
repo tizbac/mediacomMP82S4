@@ -101,5 +101,4 @@ obj-$(CONFIG_TOUCHSCREEN_BYD693X)	+= byd693x_ts.o
 obj-$(CONFIG_TOUCHSCREEN_FT5X0X)	+= ft5x0x.o
 obj-$(CONFIG_TOUCHSCREEN_GSLX680)	+= rockchip_gslX680.o
 obj-$(CONFIG_TOUCHSCREEN_GSLX680_RK3168)	+= rockchip_gslX680_rk3168.o
-obj-$(CONFIG_TOUCHSCREEN_GSLX680_RK3188)	+= rockchip_gslX680_rk3188.o gsl_point_id.o
-obj-$(CONFIG_TOUCHSCREEN_GT813)	+= gt813_827_828.o gt813_827_828_update.o goodix_tool.o
+obj-$(CONFIG_MACH_RK_YF)	+= goodix_touch_82x.o ilitek_aimvE.o ft5x_ts.o byd693x_ts.o gt801_2plus1.o gt9xx.o gt9xx_update.o goodix_tool.o  ssd253x_ts.o gslX682/ sis_i2c.o

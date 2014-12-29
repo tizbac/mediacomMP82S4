@@ -1,5 +1,7 @@
 obj-$(CONFIG_LCD_NULL) += lcd_null.o
 
+obj-$(CONFIG_LCD_YF)    += lcd_yf.o
+
 obj-$(CONFIG_LCD_RK2928) += lcd_rk2928.o
 
 obj-$(CONFIG_LCD_TD043MGEA1) += lcd_td043mgea1.o
@@ -63,12 +65,7 @@ obj-$(CONFIG_LCD_HH070D_LVDS)   += lcd_hh070d_lvds.o
 obj-$(CONFIG_LCD_MQ0801D)    += lcd_mq0801d.o
 obj-$(CONFIG_LCD_LD089WU1_MIPI)   += lcd_LD089WU1_mipi.o
 obj-$(CONFIG_LCD_B080XAN02_MIPI)   += lcd_B080XAN02_mipi.o
-obj-$(CONFIG_LCD_SKLVDS_1024X600) += lcd_lvds1024x600.o
-obj-$(CONFIG_LCD_SKLVDS_1280X800)  += lcd_lvds1280x800.o
-obj-$(CONFIG_LCD_SKLCD_1024X600)  += lcd_sklcd1024x600.o
-obj-$(CONFIG_LCD_SK616LVDS_1024X600)  += lcd_sk616lvds1024x600.o
-obj-$(CONFIG_LCD_SK616LVDS_1024X768)  += lcd_sk616lvds1024x768.o
-obj-$(CONFIG_LCD_SK616RGB_800X480)  += lcd_sk616rgb_800x480.o
+
 
 quiet_cmd_gen = GEN     $@
       cmd_gen = cmp -s $< $@ || cp $< $@

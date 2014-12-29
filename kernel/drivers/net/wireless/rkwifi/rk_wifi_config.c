@@ -29,8 +29,17 @@ int rkwifi_set_country_code(char *code)
  
 #define ANDROID_FW_PATH "/system/etc/firmware/"
 
+const char * get_wifi_firmware(void);
+const char * get_wifi_nvram(void);
 int rkwifi_set_firmware(char *fw, char *nvram)
 {
+	const char * ff = get_wifi_firmware();
+	const char * nv = get_wifi_nvram();
+	if(ff && nv) {
+		sprintf(fw, "%s%s", ANDROID_FW_PATH, ff);
+		sprintf(nvram, "%s%s", ANDROID_FW_PATH, nv);
+		return 0;
+	}
 #ifdef CONFIG_RK903
 	sprintf(fw, "%s%s", ANDROID_FW_PATH, "fw_RK903.bin");
 #ifdef CONFIG_RKWIFI_26M

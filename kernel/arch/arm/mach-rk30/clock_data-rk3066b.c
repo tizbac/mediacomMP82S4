@@ -350,14 +350,24 @@ struct clk *get_evendiv_parents_div(struct clk *clk, unsigned long rate, u32 *di
 
        if(clk->rate == rate)
                return clk->parent;
-       for(i = 0; i < 2; i++) {
+	for(i = 0; i < 2; i++) {
+		if(rate==27*MHZ) {
+			div[i] = clk_get_freediv(rate,  clk->parents[i]->rate, clk->div_max);
+			new_rate[i] = clk->parents[i]->rate / div[i];
+			if(new_rate[i] == rate) {
+				*div_out = div[i];
+				return clk->parents[i];
+			}
+		}
+		else {
                div[i] = clk_get_evendiv(rate, clk->parents[i]->rate, clk->div_max);
                new_rate[i] = clk->parents[i]->rate / div[i];
                if(new_rate[i] == rate) {
                        *div_out = div[i];
                        return clk->parents[i];
                }
-       }
+		}
+	}
        if(new_rate[0] < new_rate[1])
                i = 1;
        else

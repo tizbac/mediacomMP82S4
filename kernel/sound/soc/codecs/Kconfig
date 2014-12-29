@@ -79,7 +79,6 @@ config SND_SOC_ALL_CODECS
 	select SND_SOC_WM8900 if I2C
 	select SND_SOC_RT5621 if I2C
 	select SND_SOC_RT5631 if I2C
-	select SND_SOC_RT5616 if I2C
 	select SND_SOC_RT5631_PHONE if I2C
 	select SND_SOC_RT5625 if I2C
 	select SND_SOC_RT3261 if I2C
@@ -341,8 +340,7 @@ config SND_SOC_RT5623
 
 config SND_SOC_RT5631
 	tristate
-config SND_SOC_RT5616
-	tristate	
+	
 config SND_SOC_RT5631_PHONE
 	tristate
 	

@@ -8,8 +8,8 @@
  *  it under the terms of the GNU General Public License version 2 as
  *  published by the Free Software Foundation.
  */
- 
- 
+
+
 #include <linux/module.h>
 #include <linux/delay.h>
 #include <linux/earlysuspend.h>
@@ -28,52 +28,7 @@
 #include <linux/proc_fs.h>
 #include <linux/input/mt.h>
 
-
-
-
-#if defined (CONFIG_TOUCHSCREEN_TP_7inch)
-
-//#include "rockchip_gslX680_7inch.h"
-//#include "rockchip_gslX680E_7inch.h"
-//#include "rockchip_gslX680_rk3168.h"
-
-//#include "rockchip_gslX680E_7inch_gp.h"
- 
-#include "rockchip_gslX680E_7inch_gp.h"
- 
-//#include "rockchip_gslX680E_7inch_bsr.h"
-
-#elif defined (CONFIG_TOUCHSCREEN_TP_5inch)
-
-#include "rockchip_gslX680E_5inch.h"
-
-#elif defined (CONFIG_TOUCHSCREEN_TP_JY_7inch)
-
-#include "rockchip_gslX680E_7inch_gp_jy2.h"
- 
-#elif defined (CONFIG_TOUCHSCREEN_TP_YLP_7inch)
- 
-#include "rockchip_gslX680E_ylp.h"
-
- 
-#elif defined (CONFIG_TOUCHSCREEN_TP_8inch)
-#include "rockchip_gsl3680_8inch.h"
-
-
-#elif defined (CONFIG_TOUCHSCREEN_TP_9p7inch)
-
-#include "rockchip_gslX680_9p7inch.h"
-
-#elif defined (CONFIG_TOUCHSCREEN_TP_10p1inch)
-#include "rockchip_gslX680_10p1inch.h"
-
-#else
-
-#include "rockchip_gslX680_7inch.h"
-//#include "rockchip_gslX680E_7inch_625.h"
-
-#endif
-
+#include "rockchip_gslX680_rk3168.h"
 
 //#define GSL_DEBUG
 //#define GSL_TIMER
@@ -626,33 +581,12 @@ static void report_key(struct gsl_ts *ts, u16 x, u16 y)
 }
 #endif
 
-u16 swap_x(u16 x)
-{
-	
-	return (SCREEN_MAX_X-x);
-}
-
-u16 swap_y(u16 y)
-{
-	
-	return (SCREEN_MAX_Y-y);
-}
-
 static void report_data(struct gsl_ts *ts, u16 x, u16 y, u8 pressure, u8 id)
 {
 	swap(x, y);
 
 	print_info("#####id=%d,x=%d,y=%d######\n",id,x,y);
 
-	#if defined (CONFIG_TOUCHSCREEN_SWAP_X)
-	x = swap_x(x);
-	#endif
-	
-	#if defined (CONFIG_TOUCHSCREEN_SWAP_Y)
-	y = swap_y(y);
-	#endif
-	
-	
 	if(x>=SCREEN_MAX_X||y>=SCREEN_MAX_Y)
 	{
 	#ifdef HAVE_TOUCH_KEY
@@ -693,8 +627,6 @@ static void process_gslX680_data(struct gsl_ts *ts)
 	}
 	for(i= 0;i < (touches > MAX_FINGERS ? MAX_FINGERS : touches);i ++)
 	{
-
-	//printk("---------------------xxxxxxxx---------------------\n");
 		x = join_bytes( ( ts->touch_data[ts->dd->x_index  + 4 * i + 1] & 0xf),
 				ts->touch_data[ts->dd->x_index + 4 * i]);
 		y = join_bytes(ts->touch_data[ts->dd->y_index + 4 * i + 1],
@@ -739,8 +671,6 @@ static void process_gslX680_data(struct gsl_ts *ts)
 	#endif			
 	}
 #endif
-
-//printk("---------------------sktest---------------------\n");
 	input_sync(ts->input);
 	ts->prev_touches = touches;
 }
@@ -833,8 +763,6 @@ static int gsl_ts_init_ts(struct i2c_client *client, struct gsl_ts *ts)
 	int i, rc = 0;
 	
 	printk("[GSLX680] Enter %s\n", __func__);
-
-	//printk("-------------=-=========sk -------------------xxxxxxx    \n", __func__);
 
 	
 	ts->dd = &devices[ts->device_id];

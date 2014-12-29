@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2012 ROCKCHIP, Inc.
- *
+ * drivers/video/display/transmitter/ssd2828.c
  * author: hhb@rock-chips.com
  * create date: 2013-01-17
  * This software is licensed under the terms of the GNU General Public
@@ -41,7 +41,7 @@
 
 
 struct ssd2828_t *ssd2828 = NULL;
-
+void ssd_set_register(unsigned int reg_and_value);
 
 int ssd2828_gpio_init(void *data) {
 	int ret = 0;
@@ -55,9 +55,11 @@ int ssd2828_gpio_init(void *data) {
 			//gpio_free(reset->reset_pin);
 			printk("%s: request ssd2828_RST_PIN error\n", __func__);
 		} else {
+#if OLD_RK_IOMUX
 			if(reset->mux_name)
 				rk30_mux_api_set(reset->mux_name, 0);
-			gpio_direction_output(reset->reset_pin, reset->effect_value);
+#endif				
+			gpio_direction_output(reset->reset_pin, !reset->effect_value);
 		}
 	}
 	
@@ -67,8 +69,10 @@ int ssd2828_gpio_init(void *data) {
 			//gpio_free(vdd->enable_pin);
 			printk("%s: request ssd2828_vddio_PIN error\n", __func__);
 		} else {
+#if OLD_RK_IOMUX		
 			if(vdd->mux_name)
 				rk30_mux_api_set(vdd->mux_name, 0);	
+#endif			
 			gpio_direction_output(vdd->enable_pin, !vdd->effect_value);	
 		}
 	}
@@ -80,8 +84,25 @@ int ssd2828_gpio_init(void *data) {
 			//gpio_free(vdd->enable_pin);
 			printk("%s: request ssd2828_vdd_mipi_PIN error\n", __func__);
 		} else {
+#if OLD_RK_IOMUX		
 			if(vdd->mux_name)
 				rk30_mux_api_set(vdd->mux_name, 0);	
+#endif			
+			gpio_direction_output(vdd->enable_pin, !vdd->effect_value);	
+		}
+	}
+	
+	vdd = &ssd2828->shut;
+	if(vdd->enable_pin > INVALID_GPIO) {
+		ret = gpio_request(vdd->enable_pin, "ssd2828_shut");
+		if (ret != 0) {
+			//gpio_free(vdd->enable_pin);
+			printk("%s: request ssd2828_shut_PIN error\n", __func__);
+		} else {
+#if OLD_RK_IOMUX		
+			if(vdd->mux_name)
+				rk30_mux_api_set(vdd->mux_name, 0);	
+#endif			
 			gpio_direction_output(vdd->enable_pin, !vdd->effect_value);	
 		}
 	}
@@ -92,8 +113,10 @@ int ssd2828_gpio_init(void *data) {
 			//gpio_free(spi->cs);
 			printk("%s: request ssd2828_spi->cs_PIN error\n", __func__);
 		} else {
+#if OLD_RK_IOMUX		
 			if(spi->cs_mux_name)
 				rk30_mux_api_set(spi->cs_mux_name, 0);	
+#endif				
 			gpio_direction_output(spi->cs, GPIO_HIGH);	
 		}
 	}
@@ -103,8 +126,10 @@ int ssd2828_gpio_init(void *data) {
 			//gpio_free(spi->sck);
 			printk("%s: request ssd2828_spi->sck_PIN error\n", __func__);
 		} else {
+#if OLD_RK_IOMUX		
 			if(spi->sck_mux_name)
 				rk30_mux_api_set(spi->sck_mux_name, 0);	
+#endif
 			gpio_direction_output(spi->sck, GPIO_HIGH);	
 		}
 	}	
@@ -114,8 +139,10 @@ int ssd2828_gpio_init(void *data) {
 			//gpio_free(spi->mosi);
 			printk("%s: request ssd2828_spi->mosi_PIN error\n", __func__);
 		} else {
+#if OLD_RK_IOMUX		
 			if(spi->mosi_mux_name)
 				rk30_mux_api_set(spi->mosi_mux_name, 0);	
+#endif
 			gpio_direction_output(spi->mosi, GPIO_HIGH);	
 		}
 	}	
@@ -125,8 +152,10 @@ int ssd2828_gpio_init(void *data) {
 			//gpio_free(spi->miso);
 			printk("%s: request ssd2828_spi->miso_PIN error\n", __func__);
 		} else {
+#if OLD_RK_IOMUX		
 			if(spi->miso_mux_name)
 				rk30_mux_api_set(spi->miso_mux_name, 0);	
+#endif
 			gpio_direction_input(spi->miso);	
 		}
 	}	
@@ -140,24 +169,39 @@ int ssd2828_gpio_deinit(void *data) {
 	struct power_t *vdd = &ssd2828->vddio;
 	struct spi_t *spi = &ssd2828->spi;
 	
-	gpio_direction_input(reset->reset_pin);
-	gpio_free(reset->reset_pin);
-	
-	gpio_direction_input(vdd->enable_pin);
-	gpio_free(vdd->enable_pin);
-	
+	if(reset->reset_pin > INVALID_GPIO) {
+		gpio_direction_input(reset->reset_pin);
+		gpio_free(reset->reset_pin);
+	}
+	if(vdd->enable_pin > INVALID_GPIO) {
+		gpio_direction_input(vdd->enable_pin);
+		gpio_free(vdd->enable_pin);
+	}
 	vdd = &ssd2828->vdd_mipi;
-	gpio_direction_input(vdd->enable_pin);
-	gpio_free(vdd->enable_pin);
-	
-	gpio_direction_input(spi->cs);
-	gpio_free(spi->cs);
-	gpio_direction_input(spi->sck);
-	gpio_free(spi->sck);
-	gpio_direction_input(spi->mosi);
-	gpio_free(spi->mosi);
-	gpio_free(spi->miso);
-	
+	if(vdd->enable_pin > INVALID_GPIO) {
+		gpio_direction_input(vdd->enable_pin);
+		gpio_free(vdd->enable_pin);
+	}
+	vdd = &ssd2828->shut;
+	if(vdd->enable_pin > INVALID_GPIO) {
+		gpio_direction_input(vdd->enable_pin);
+		gpio_free(vdd->enable_pin);
+	}
+	if(spi->cs > INVALID_GPIO) {
+		gpio_direction_input(spi->cs);
+		gpio_free(spi->cs);
+	}
+	if(spi->sck > INVALID_GPIO) {
+		gpio_direction_input(spi->sck);
+		gpio_free(spi->sck);
+	}
+	if(spi->mosi > INVALID_GPIO) {
+		gpio_direction_input(spi->mosi);
+		gpio_free(spi->mosi);
+	}
+	if(spi->miso > INVALID_GPIO) {
+		gpio_free(spi->miso);
+	}
 	return 0;
 }
 
@@ -168,7 +212,7 @@ int ssd2828_reset(void *data) {
 		return -1;
 	gpio_set_value(reset->reset_pin, reset->effect_value);
 	if(reset->time_before_reset <= 0)
-		msleep(1);
+		msleep(10);
 	else
 		msleep(reset->time_before_reset);
 	
@@ -185,8 +229,6 @@ int ssd2828_vdd_enable(void *data) {
 	struct power_t *vdd = (struct power_t *)data;
 	if(vdd->enable_pin > INVALID_GPIO) {
 		gpio_set_value(vdd->enable_pin, vdd->effect_value);
-	} else {
-		//for other control
 	}
 	return ret;
 }
@@ -197,8 +239,6 @@ int ssd2828_vdd_disable(void *data) {
 	
 	if(vdd->enable_pin > INVALID_GPIO) {
 		gpio_set_value(vdd->enable_pin, !vdd->effect_value);
-	} else {
-		//for other control
 	}
 	return ret;
 }
@@ -208,11 +248,16 @@ int ssd2828_power_up(void) {
 
 	int ret = 0;
 	struct ssd2828_t *ssd = (struct ssd2828_t *)ssd2828;
-	
-	ssd2828_gpio_init(NULL);
+	struct spi_t *spi = &ssd2828->spi;
 	ssd->vdd_mipi.enable(&ssd->vdd_mipi);
 	ssd->vddio.enable(&ssd->vddio);
 	ssd->reset.do_reset(&ssd->reset);
+	ssd->shut.enable(&ssd->shut);
+	
+	gpio_direction_output(spi->cs, GPIO_HIGH);
+	gpio_direction_output(spi->sck, GPIO_LOW);
+	gpio_direction_input(spi->miso);
+	gpio_direction_output(spi->mosi, GPIO_LOW);
 	
 	return ret;
 }
@@ -221,10 +266,28 @@ int ssd2828_power_down(void) {
 
 	int ret = 0;
 	struct ssd2828_t *ssd = (struct ssd2828_t *)ssd2828;
+	struct spi_t *spi = &ssd2828->spi;
 	
+	ssd->shut.disable(&ssd->shut);
+	msleep(10);
+	
+	ssd_set_register(0x00b70300);
+	msleep(1);
+	ssd_set_register(0x00b70304);
+	msleep(1);
+	ssd_set_register(0x00b90000);
+	msleep(10);
+	
+	//set all gpio to low to avoid current leakage
+	gpio_direction_output(spi->cs, GPIO_LOW);
+	gpio_direction_output(spi->sck, GPIO_LOW);
+	gpio_direction_output(spi->miso, GPIO_LOW);
+	gpio_direction_output(spi->mosi, GPIO_LOW);
+	gpio_direction_output(ssd->reset.reset_pin, GPIO_LOW);
+
 	ssd->vddio.disable(&ssd->vddio);
 	ssd->vdd_mipi.disable(&ssd->vdd_mipi);
-	ssd2828_gpio_deinit(NULL);
+	ssd->shut.enable(&ssd->shut);
 	
 	return ret;
 }
@@ -338,9 +401,10 @@ void ssd_set_register(unsigned int reg_and_value)
     send_data_cmd(reg_and_value & 0x0000ffff);
 }
 
-int ssd_set_registers(unsigned int reg_array[], int n) {
+int ssd_set_registers(void * regs, u32 n) {
 
 	int i = 0;
+	unsigned int * reg_array = regs;
 	for(i = 0; i < n; i++) {
 		if(reg_array[i] < 0x00b00000) {      //the lowest address is 0xb0 of ssd2828
 		    if(reg_array[i] < 20000)
@@ -357,24 +421,24 @@ int ssd_set_registers(unsigned int reg_array[], int n) {
 
 int ssd_mipi_dsi_send_dcs_packet(unsigned char regs[], u32 n) {
 	//unsigned int data = 0, i = 0;
-	ssd_set_register(0x00B70363);
+	ssd_set_register(0x00B70343);   //
 	ssd_set_register(0x00B80000);
 	ssd_set_register(0x00Bc0001);
 	
 	ssd_set_register(0x00Bf0000 | regs[0]);
 	msleep(1);
-
+	ssd_set_register(0x00B7034b);
 	return 0;
 }
 
 
-int _ssd2828_send_packet(unsigned char type, unsigned char regs[], u32 n) {
+int _ssd2828_send_packet(unsigned char type, unsigned char regs[], int n) {
 
 	
 	return 0;
 }
 
-int ssd2828_send_packet(unsigned char type, unsigned char regs[], u32 n) {
+int ssd2828_send_packet(unsigned char type, unsigned char regs[], int n) {
 	return _ssd2828_send_packet(type, regs, n);
 }
 
@@ -457,16 +521,24 @@ static int ssd2828_probe(struct platform_device *pdev) {
     	ssd2828->vdd_mipi.enable = ssd2828_vdd_enable;    
     if(!ssd2828->vdd_mipi.disable)
     	ssd2828->vdd_mipi.disable = ssd2828_vdd_disable;	
-	
+    	
+    if(!ssd2828->shut.enable)
+    	ssd2828->shut.enable = ssd2828_vdd_enable;    
+    if(!ssd2828->shut.disable)
+    	ssd2828->shut.disable = ssd2828_vdd_disable;		
+    	
+    	
+	ssd2828_gpio_init(NULL);
 	return 0;
 }
 
 
 static int ssd2828_remove(struct platform_device *pdev) {
 
-	if(!ssd2828)
+	if(ssd2828) {
+		ssd2828_gpio_deinit(NULL);
 		ssd2828 = NULL;
-
+	}
 	return 0;
 }
 

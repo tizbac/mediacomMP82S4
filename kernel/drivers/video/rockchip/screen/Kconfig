@@ -5,6 +5,9 @@ choice
 config LCD_NULL
 	bool "NULL"
 
+config LCD_YF
+	bool "YF lcd panel"
+
 config LCD_RK2928
 	bool "RK2928 LCD"
         depends on MACH_RK2928
@@ -186,20 +189,6 @@ config LCD_LD089WU1_MIPI
 	bool "mipi dsi lcd LD089WU1 1920X1200"
 config LCD_B080XAN02_MIPI
 	bool "mipi dsi lcd B080XAN02 1024X768"	
-	
-config LCD_SKLVDS_1024X600
-				bool "SK RGB LVDS LCD_HDMI_1024X600"
-config LCD_SKLVDS_1280X800
-				bool "SK RGB LVDS LCD_HDMI_1280X800"
-config LCD_SKLCD_1024X600
-				bool "SK RGB LCD_HDMI_1024X600"
-config LCD_SK616LVDS_1024X600
-				bool "SK 616LVDS 1024X600"
-config LCD_SK616LVDS_1024X768
-				bool "SK 616LVDS 1024X768"								
-config LCD_SK616RGB_800X480
-				bool "SK 616RGB 800X480"	
-				
 endchoice
 
 

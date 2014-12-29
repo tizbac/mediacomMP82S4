@@ -221,7 +221,7 @@ void clk_disable_nolock(struct clk *clk)
 {
 	if (clk->usecount == 0) {
 		CLOCK_PRINTK_ERR(KERN_ERR "Trying disable clock %s with 0 usecount\n", clk->name);
-		WARN_ON(1);
+//		WARN_ON(1);
 		return;
 	}
 	if (--clk->usecount == 0) {

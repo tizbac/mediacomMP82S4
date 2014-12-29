@@ -359,10 +359,16 @@ static int inline __rk_platform_add_display_devices(struct platform_device *fb,
 		if(lcdc0)
 		{
 			lcdc0_screen_info = lcdc0->dev.platform_data;
-
-			extend_lcdc = lcdc0;
-			printk(KERN_INFO "lcdc0 is used as external display device contoller!\n");
-
+			if(lcdc0_screen_info->prop == PRMRY)
+			{
+				prmry_lcdc = lcdc0;
+				printk(KERN_INFO "lcdc0 is used as primary display device contoller!\n");
+			}
+			else
+			{
+				extend_lcdc = lcdc0;
+				printk(KERN_INFO "lcdc0 is used as external display device contoller!\n");
+			}
 				
 			
 		}
@@ -374,10 +380,16 @@ static int inline __rk_platform_add_display_devices(struct platform_device *fb,
 		if(lcdc1)
 		{
 			lcdc1_screen_info = lcdc1->dev.platform_data;
-
-			prmry_lcdc = lcdc1;
-			printk(KERN_INFO "lcdc1 is used as primary display device controller!\n");
-
+			if(lcdc1_screen_info->prop == PRMRY)
+			{
+				prmry_lcdc = lcdc1;
+				printk(KERN_INFO "lcdc1 is used as primary display device controller!\n");
+			}
+			else
+			{
+				extend_lcdc = lcdc1;
+				printk(KERN_INFO "lcdc1 is used as external display device controller!\n");
+			}
 				
 			
 		}

@@ -82,19 +82,20 @@ struct lkg_maxvolt {
 	int leakage_level;
 	unsigned int maxvolt;
 };
+#if 0
 static struct lkg_maxvolt lkg_volt_table[] = {
-//	{.leakage_level = 1,	.maxvolt = 1350 * 1000},
-//	{.leakage_level = 3,	.maxvolt = 1275 * 1000},
-//	{.leakage_level = 15,	.maxvolt = 1250 * 1000},
-	
-	//{.leakage_level = 1, .maxvolt = 1350 * 1000}, 
-	//{.leakage_level = 3, .maxvolt = 1350 * 1000}, 
-	//{.leakage_level = 15, .maxvolt = 1250 * 1000},
-	
+	{.leakage_level = 1,	.maxvolt = 1350 * 1000},
+	{.leakage_level = 3,	.maxvolt = 1275 * 1000},
+	{.leakage_level = 15,	.maxvolt = 1250 * 1000},
+};
+#else
+/* avdd_com & vdd_arm short circuit */
+static struct lkg_maxvolt lkg_volt_table[] = {
 	{.leakage_level = 3,	.maxvolt = 1350 * 1000},
 	{.leakage_level = 5,	.maxvolt = 1300 * 1000},
 	{.leakage_level = 15,	.maxvolt = 1250 * 1000},
 };
+#endif
 
 static int leakage_level = 0;
 #define MHZ	(1000 * 1000)

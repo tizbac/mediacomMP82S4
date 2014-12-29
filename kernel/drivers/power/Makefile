@@ -47,3 +47,6 @@ obj-$(CONFIG_BATTERY_RK30_ADC)  += rk30_adc_battery.o
 obj-$(CONFIG_PLAT_RK)		+= rk29_charger_display.o
 obj-$(CONFIG_BATTERY_RK30_ADC_FAC)  += rk30_factory_adc_battery.o
 obj-$(CONFIG_CW2015_BATTERY)  += cw2015_battery.o
+obj-$(CONFIG_MACH_RK_YF)  += yf_adc_battery.o yf_ac_detect.o
+
+obj-$(CONFIG_KP_AXP) += axp_power/

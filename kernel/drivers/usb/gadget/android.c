@@ -162,6 +162,8 @@ static struct usb_configuration android_config_driver = {
 	.bConfigurationValue = 1,
 };
 
+#include <mach/board.h>
+
 static void android_work(struct work_struct *data)
 {
 	struct android_dev *dev = container_of(data, struct android_dev, work);
@@ -181,6 +183,16 @@ static void android_work(struct work_struct *data)
 	spin_unlock_irqrestore(&cdev->lock, flags);
 
 	if (uevent_envp) {
+		#if defined (CONFIG_KP_AXP22)
+		if (pmic_is_axp228()) {
+			extern void yftech_usb_pc_connect(bool connected);
+			if (uevent_envp == connected) {
+				yftech_usb_pc_connect(true);
+			} else if (uevent_envp == disconnected) {
+				yftech_usb_pc_connect(false);
+			}
+		}
+		#endif
 		kobject_uevent_env(&dev->dev->kobj, KOBJ_CHANGE, uevent_envp);
 		pr_info("%s: sent uevent %s\n", __func__, uevent_envp[0]);
 	} else {

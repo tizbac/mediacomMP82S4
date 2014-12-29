@@ -1,9 +1,69 @@
-
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/device.h>
 #include <linux/err.h>
+#include <mach/yfmach.h>
+struct wifi_entry {
+	const char * name;
+	const char * type;
+	const char * firmware;
+	const char * nvram;
+};
+static struct wifi_entry s_wifi_type [] = {
+	{"RK903", 0, "fw_RK903.bin", "nvram_RK903_26M.cal"},
+	{"RK901", 0, "fw_RK901.bin", "nvram_RK901.txt"},
+	{"BCM4330", 0, "fw_bcm4330.bin", "nvram_4330.txt"},
+	{"AP6181", "RK901", "fw_RK901.bin", "nvram_AP6181.txt"},
+	{"AP6210", "RK901", "fw_RK901.bin", "nvram_AP6210.txt"},
+	{"AP6476", "RK901", "fw_RK901.bin", "nvram_AP6476.txt"},
+	{"AP6493", "RK903", "fw_RK903.bin", "nvram_AP6493.txt"},
+	{"AP6330", "RK903", "fw_RK903_ag.bin", "nvram_AP6330.txt"},
+	{"GB86302I", "RK903", "fw_RK903_ag.bin", "nvram_GB86302I.txt"},
+	{0, 0, 0, 0}
+};
+
+static ssize_t wifi_aidc_read(struct class *cls, struct class_attribute *attr, char *_buf);
+static char aidc_type[20] = {0};
+
+static struct wifi_entry * s_wifi_entry;
+static struct wifi_entry * get_wifi_entry(void) {
+	if(s_wifi_entry == 0) {
+		const char * name = env_get_str("wifi_supproted", 0);
+		if (name && (0 == strncmp(name, "AIDC", strlen("AIDC")))) {
+			if (!aidc_type[0])
+				wifi_aidc_read(NULL, NULL, aidc_type);
+			name = aidc_type;
+		}
+		s_wifi_entry = s_wifi_type;
+		while(s_wifi_entry->name) {
+			if(name && !strcmp(s_wifi_entry->name, name)) {
+				break;
+			}
+			s_wifi_entry++;
+		}
+		if(!s_wifi_entry->name || name) {
+			s_wifi_entry->name = name;
+			if(!s_wifi_entry->type) {
+				s_wifi_entry->type = s_wifi_entry->name;
+			}
+			s_wifi_entry->type = env_get_str("wifi_type", s_wifi_entry->type);
+			s_wifi_entry->firmware = env_get_str("wifi_firmware", s_wifi_entry->firmware);
+			s_wifi_entry->nvram = env_get_str("wifi_nvram", s_wifi_entry->nvram);
+			printk("wifi name %s\n", name);
+		}
+	}
+	return s_wifi_entry;
+}
+const char * get_wifi_type(void) {
+	return get_wifi_entry()->type;
+}
+const char * get_wifi_firmware(void) {
+	return get_wifi_entry()->firmware;
+}
+const char * get_wifi_nvram(void) {
+	return get_wifi_entry()->nvram;
+}
 #include <linux/delay.h>
 #include <linux/syscalls.h>
 #include <linux/fs.h>
@@ -16,6 +76,12 @@ static ssize_t wifi_chip_read(struct class *cls, char *_buf)
 #endif
 {
     int count = 0;
+    const char * type = get_wifi_type();
+    if(type) {
+        count = sprintf(_buf, "%s", type);
+        printk("Current WiFi chip is %s\n", type);
+        return count;
+    }
 
 #ifdef CONFIG_BCM4329
     count = sprintf(_buf, "%s", "BCM4329");
@@ -118,6 +184,11 @@ static ssize_t wifi_chip_read(struct class *cls, char *_buf)
     printk("Current WiFi chip is RTL8723AS.\n");
 #endif
 
+#ifdef CONFIG_ESP8089
+    count = sprintf(_buf, "%s", "ESP8089");
+    printk("Current WiFi chip is ESP8089.\n");
+#endif
+	
     return count;
 }
 
@@ -207,7 +278,7 @@ static ssize_t wifi_pcba_write(struct class *cls, char *_buf, size_t _count)
         return _count;
 }
 
-#ifdef CONFIG_AIDC
+//#ifdef CONFIG_AIDC
 int check_wifi_type_from_id(int id, char * _buf) {
 	int count = 0;
 
@@ -254,7 +325,7 @@ extern int wifi_deactivate_usb(void);
 //8723 802.11n WLAN Adapter
 //8188eu 802.11n NIC
 //8188cu 802.11n WLAN Adapter
-char aidc_type[20] = {0};
+//char aidc_type[20] = {0};
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37))
 static ssize_t wifi_aidc_read(struct class *cls, struct class_attribute *attr, char *_buf)
@@ -270,6 +341,9 @@ static ssize_t wifi_aidc_read(struct class *cls, char *_buf)
 		mm_segment_t old_fs;
 		 
 		sprintf(_buf, "%s", "UNKNOW");
+		//make sure power off first
+		rk29sdk_wifi_power(0);
+		msleep(50);
 		wifi_activate_usb();
 		msleep(2000);
 		old_fs = get_fs();
@@ -294,17 +368,34 @@ static ssize_t wifi_aidc_read(struct class *cls, char *_buf)
 		nread = vfs_read(file, (char __user *)usbid, sizeof(usbid), &pos);
 		set_fs(old_fs);
 		filp_close(file, NULL);
-		wifi_deactivate_usb();
 		idP = simple_strtol(usbid, NULL, 16);
 		printk("Get usb wifi idProduct = 0X%04X\n", idP);
 		count = check_wifi_type_from_id(idP, _buf);
 
+		wifi_deactivate_usb();
+
         return count;
 }
-#endif //CONFIG_AIDC
+//#endif //CONFIG_AIDC
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37))
+static ssize_t wifi_chip_write(struct class *cls, struct class_attribute *attr, char *_buf, size_t _count)
+#else
+static ssize_t wifi_chip_write(struct class *cls, char *_buf, size_t _count)
+#endif
+{
+	if (!aidc_type[0] && 0 == strncmp(env_get_str("wifi_supproted", 0), "AIDC", strlen("AIDC"))) {
+		int len = _count;
+		_buf[len] = 0;
+		while(len-- && (_buf[len] == '\n' || _buf[len] == ' ')) {
+			_buf[len] = 0;
+		}
+		strcpy(aidc_type, _buf);
+	}
+	return _count;
+}
 static struct class *rkwifi_class = NULL;
-static CLASS_ATTR(chip, 0664, wifi_chip_read, NULL);
+static CLASS_ATTR(chip, 0664, wifi_chip_read, wifi_chip_write);
 static CLASS_ATTR(p2p, 0664, wifi_p2p_read, NULL);
 static CLASS_ATTR(pcba, 0664, wifi_pcba_read, wifi_pcba_write);
 #ifdef CONFIG_AIDC

@@ -4,25 +4,45 @@
 #include <linux/irq.h>
 #include <linux/gpio.h>
 #include <mach/board.h>
+#include <mach/yfmach.h>
 
 #define WAKE_LOCK_TIMEOUT	(10 * HZ)
 
 static irqreturn_t usb_detect_irq_handler(int irq, void *dev_id);
 static int detect_gpio = INVALID_GPIO;
+static int usb_host_dtc_gpio;
+static int usb_host_pwr_gpio;
+#define debug printk
+#define DETECT_DELAY 8
+
+static void usb_detect_do_pwroff(struct work_struct *work)
+{
+	debug("doll not found\n");
+	if(gpio_get_value(detect_gpio) == 1) {
+		gpio_set_value(usb_host_pwr_gpio, 0);
+	}
+}
+static DECLARE_DELAYED_WORK(pwroff_work, usb_detect_do_pwroff);
 
 static void usb_detect_do_wakeup(struct work_struct *work)
 {
-	int ret;
+	int ret, value;
 	int irq = gpio_to_irq(detect_gpio);
 	unsigned int type;
 
+	cancel_delayed_work(&pwroff_work);
 	rk28_send_wakeup_key();
-	type = gpio_get_value(detect_gpio) ? IRQ_TYPE_EDGE_FALLING : IRQ_TYPE_EDGE_RISING;
+	value = gpio_get_value(detect_gpio);
+	type =  value ? IRQ_TYPE_EDGE_FALLING : IRQ_TYPE_EDGE_RISING;
 	ret = irq_set_irq_type(irq, type);
 	if (ret < 0) {
 		pr_err("%s: irq_set_irq_type(%d, %d) failed\n", __func__, irq, type);
 	}
 	enable_irq(irq);
+	if(usb_host_pwr_gpio != INVALID_GPIO) {
+		debug("doll %s\n", value? "removed" : "inserted");
+		gpio_set_value(usb_host_pwr_gpio, !value);
+	}
 }
 
 static DECLARE_DELAYED_WORK(wakeup_work, usb_detect_do_wakeup);
@@ -38,6 +58,39 @@ static irqreturn_t usb_detect_irq_handler(int irq, void *dev_id)
 }
 
 #ifndef CONFIG_RK_USB_DETECT_BY_OTG_BVALID
+static irqreturn_t host_detect_irq_handler(int irq, void *dev_id)
+{
+	gpio_set_value(usb_host_pwr_gpio, 1);
+	wake_lock_timeout(&usb_wakelock, HZ * (DETECT_DELAY+1));
+	schedule_delayed_work(&pwroff_work, HZ * DETECT_DELAY);
+	debug("doll inserted ?\n");
+	return IRQ_HANDLED;
+}
+
+static void __init usb_host_pwr_init(void)
+{
+	int ret, irq;
+	int gpio = env_get_u32("usb_host_dtc_gpio", INVALID_GPIO);
+	if (gpio == INVALID_GPIO) return;
+	usb_host_pwr_gpio = env_get_u32("usb_host_pwr_gpio", INVALID_GPIO);
+	if (usb_host_pwr_gpio == INVALID_GPIO) return;
+	gpio_request(gpio, "usb_host_dtc");
+	gpio_request(usb_host_pwr_gpio, "usb_host_pwr");
+	gpio_direction_output(usb_host_pwr_gpio, 1);
+	gpio_direction_input(gpio);
+	irq = gpio_to_irq(gpio);
+	ret = request_irq(irq, host_detect_irq_handler, IRQF_TRIGGER_RISING, "usb_host_dtc_gpio", NULL);
+	if (ret < 0) {
+		pr_err("%s: request_irq(%d) failed\n", __func__, irq);
+		gpio_free(gpio);
+		usb_host_pwr_gpio = INVALID_GPIO;
+		return;
+	}
+	gpio_direction_output(usb_host_pwr_gpio, 0);
+	usb_host_dtc_gpio = gpio;
+	enable_irq_wake(irq);
+}
+
 int __init board_usb_detect_init(unsigned gpio)
 {
 	int ret;
@@ -73,6 +126,7 @@ int __init board_usb_detect_init(unsigned gpio)
 		return ret;
 	}
 	enable_irq_wake(irq);
+	usb_host_pwr_init();
 
 	return 0;
 }

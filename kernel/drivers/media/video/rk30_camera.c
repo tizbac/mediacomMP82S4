@@ -953,7 +953,7 @@ static void rk30_camera_request_reserve_mem(void)
     if (max_resolution < PMEM_SENSOR_FULL_RESOLUTION_CIF_0)
         max_resolution = PMEM_SENSOR_FULL_RESOLUTION_CIF_0;
 
-    switch (max_resolution)
+    switch (max_resolution & 0xFFFF0000)
     {
         case 0x800000:
         default:

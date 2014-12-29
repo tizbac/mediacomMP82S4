@@ -124,8 +124,8 @@ int debug_level = 5;
 //#define RK29_SDMMC_LIST_QUEUE            /* use list-queue for multi-card*/
 
 #define RK29_SDMMC_DEFAULT_SDIO_FREQ   0 // 1--run in default frequency(50Mhz); 0---run in 25Mhz, 
-#if defined(CONFIG_MT6620)
-#define RK29_MAX_SDIO_FREQ   45000000    //set max-sdio-frequency 45Mhz in MTK module.
+#if defined(CONFIG_MT6620)|| defined(CONFIG_ESP8089)
+#define RK29_MAX_SDIO_FREQ   50000000    //set max-sdio-frequency 50Mhz in MTK module.
 #else
 #define RK29_MAX_SDIO_FREQ   25000000    //set max-sdio-frequency 25Mhz at the present time
 #endif
@@ -1612,6 +1612,7 @@ static int rk29_sdmmc_get_cd(struct mmc_host *mmc)
         	cdetect = rk29_sdmmc_read(host->regs, SDMMC_CDETECT);
 
             cdetect = (cdetect & SDMMC_CARD_DETECT_N)?0:1;
+            if(host->det_pin.enable) cdetect = !cdetect;
          #endif
          
             break;
@@ -3279,7 +3280,7 @@ static irqreturn_t rk29_sdmmc_interrupt(int irq, void *dev_id)
         	printk(KERN_INFO "\n******************\n%s:INT_CD=0x%x,INT-En=%d,hostState=%d,  present Old=%d ==> New=%d . [%s]\n",\
                     __FUNCTION__, pending, host->mmc->re_initialized_flags, host->state, present_old, present,  host->dma_name);
 
-    	    //rk28_send_wakeup_key(); //wake up backlight
+    	    rk28_send_wakeup_key(); //wake up backlight
     	    host->error_times = 0;
 
     	    #if 1
@@ -3516,7 +3517,7 @@ static void rk29_sdmmc_detect_change_work(struct work_struct *work)
 	int ret;
     struct rk29_sdmmc *host =  container_of(work, struct rk29_sdmmc, work.work);
 
-   // rk28_send_wakeup_key();
+    rk28_send_wakeup_key();
 	rk29_sdmmc_detect_change(host);               	 
 }
 #endif
@@ -3864,6 +3865,7 @@ static int rk29_sdmmc_probe(struct platform_device *pdev)
 
 #endif
 	
+/*
 #if defined(CONFIG_RK29_SDIO_IRQ_FROM_GPIO)
     if(RK29_CTRL_SDIO1_ID == host->pdev->id)
     {
@@ -3899,6 +3901,7 @@ static int rk29_sdmmc_probe(struct platform_device *pdev)
     }
 
 #endif
+*/
     
     /* setup sdmmc1 wifi card detect change */
     if (pdata->register_status_notify) {

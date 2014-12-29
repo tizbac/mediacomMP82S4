@@ -137,11 +137,16 @@ static void rk616_lvds_late_resume(struct early_suspend *h)
 
 #endif
 
+int lcd_supported(char * name);
 static int rk616_lvds_probe(struct platform_device *pdev)
 {
 	struct rk616_lvds *lvds = NULL; 
 	struct mfd_rk616 *rk616 = NULL;
 	rk_screen *screen = NULL;
+
+	if(!lcd_supported("rk616")) {
+		return -ENODEV;
+	}
 	lvds = kzalloc(sizeof(struct rk616_lvds),GFP_KERNEL);
 	if(!lvds)
 	{

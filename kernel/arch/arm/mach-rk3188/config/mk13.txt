@@ -1,0 +1,71 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;YFMK13;;;;;;;;;;;;;;;;;;;;;;;;
+;@ env_size = 0x1000
+;@ env_magic = 0x5F454E56 ;_env
+;@  RK30_PIN%d_P%C%d = 160 32 8 1
+;@ GPIO_INVALID = 0xFFFFFFFF
+;@ mode = clear
+
+lcd_h_pw = 48
+lcd_h_bp = 48
+lcd_h_vd = 1024
+lcd_h_fp = 80
+
+lcd_v_pw = 8
+lcd_v_bp = 8
+lcd_v_vd = 600
+lcd_v_fp = 14
+
+lcd_width = 196
+lcd_height = 147
+lcd_clk = 45000000
+lcd_bl_min = 75
+lcd_out_face = 0x00000021
+
+ctp_supproted = byd693x ssd253x gt9xx
+ctp_byd6932_x_flag = 1
+ctp_byd6932_y_flag = 1
+ctp_gt9xx_id = 0x00000013
+
+acc_dir = 5
+acc_dir_mma8452 = 6
+
+wifi_supproted = AP6181
+
+cam_name0 = sp2518_mk13
+cam_addr0= 0x00000030
+cam_flag0 = 4
+cam_pd0 = RK30_PIN3_PB5
+
+cam_name1 = hi704
+cam_addr1= 0x00000030
+cam_flag1 = 4
+cam_pd1 = RK30_PIN3_PB4
+
+cam_name3 = sp0718
+cam_pd3 = RK30_PIN3_PB4
+cam_flag3 = 0x00000004
+cam_addr3= 0x00000021
+
+power_max_vol = 4750
+power_bat_rdc = 65
+power_vol_coff1 = 307500 ;4800 : 1023
+power_vol_coff2 = 0
+power_ac_gpio = RK30_PIN0_PB2
+power_ac_level = 0
+power_charge_gpio = RK30_PIN0_PA6
+power_switch_gpio = RK30_PIN0_PC7
+power_indicator_gpio = RK30_PIN3_PD7
+power_status_coff1 = 6000
+power_status_coff2 = 52429
+power_cur_channel = 2
+power_v2c_table = 3562, 0, 3649, 4, 3691, 13, 3730, 20, 3751, 28, 3775, 39, 3830, 55, 4030, 85, 4162, 100
+
+;@ mode = append
+init = on init
+init = setprop persist.sys.language zh
+init = setprop persist.sys.country CN
+init = setprop persist.sys.timezone Asia/Shanghai
+init = setprop ro.product.model MK13
+init = setprop ro.product.brand yftech
+init = setprop ro.product.name mk13
+init = setprop ro.product.device mk13

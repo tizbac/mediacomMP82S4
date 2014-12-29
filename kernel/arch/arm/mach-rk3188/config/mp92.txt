@@ -1,0 +1,70 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;YFMP92_9722;;;;;;;;;;;;;;;;;;;;;;;;
+;@ env_size = 0x1000
+;@ env_magic = 0x5F454E56 ;_env
+;@  RK30_PIN%d_P%C%d = 160 32 8 1
+;@ GPIO_INVALID = 0xFFFFFFFF
+;@ mode = clear
+
+lcd_h_pw = 80
+lcd_h_bp = 80
+lcd_h_vd = 1024
+lcd_h_fp = 160
+
+lcd_v_pw = 10
+lcd_v_bp = 10
+lcd_v_vd = 768
+lcd_v_fp = 18
+
+lcd_width = 196
+lcd_height = 147
+lcd_clk = 65000000
+lcd_out_face = 0x00000021
+
+ctp_supproted = ft5x06 gt80x gt9xx
+
+acc_dir = 5
+
+wifi_supproted = AIDC
+
+sp2518_cfg = 1
+
+cam_name0 = sp2518
+cam_addr0= 0x00000030
+cam_flag0 = 4
+cam_pd0 = RK30_PIN3_PB5
+
+cam_name1 = sp2518
+cam_addr1= 0x00000030
+cam_flag1 = 4
+cam_pd1 = RK30_PIN3_PB4
+
+cam_name3 = sp0718
+cam_addr3= 0x00000021
+cam_flag3 = 4
+cam_pd3 = RK30_PIN3_PB4
+cam_orient3 = 180
+
+power_max_vol = 4750
+power_bat_rdc = 120
+power_vol_coff1 = 307500 ;4800 : 1023
+power_vol_coff2 = 0
+power_ac_gpio = RK30_PIN0_PB2
+power_ac_level = 0
+power_charge_gpio = RK30_PIN0_PA6
+power_switch_gpio = RK30_PIN0_PC7
+power_status_coff1 = 6000
+power_status_coff2 = 52429
+power_cur_channel = 2
+power_v2c_table = 3612, 0, 3655, 5, 3718, 19, 3741, 29, 3789, 44, 3874, 61, 3974, 77, 4057, 86, 4170, 100
+
+volume_in_capture = 20
+
+;@ mode = append
+init = on init
+init = setprop persist.sys.language zh
+init = setprop persist.sys.country CN
+init = setprop persist.sys.timezone Asia/Shanghai
+init = setprop ro.product.model MP92_9722
+init = setprop ro.product.brand yftech
+init = setprop ro.product.name mp92_9722
+init = setprop ro.product.device mp92_9722

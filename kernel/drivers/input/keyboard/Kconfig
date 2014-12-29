@@ -18,22 +18,7 @@ config KEYS_RK29
 	default y
 	help
 	  rk29 keyboard drivers(gpio and adc)
-	  
-	  
-config RK_REMOTECTL
-	tristate "skxx remoctrl"
-	depends on PLAT_RK
-	default y
-	help
-	  rk29 keyboard drivers(sk and remoctrl)
 
-config SK_VIRTUAL
-	tristate "skxx virtual"
-	depends on PLAT_RK
-	default y
-	help
-	  rk29 keyboard drivers(sk and virtual)
-	  
 config SYNAPTICS_SO340010
 	tristate "Synaptics So340010 TouchPad KEY"
 	depends on I2C

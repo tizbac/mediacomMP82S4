@@ -618,6 +618,12 @@ static void __sramfunc rk_pm_soc_sram_sys_clk_suspend(void)
 {
 	sram_cru_clksel0_con = cru_readl(CRU_CLKSELS_CON(0));
 #ifdef CONFIG_CLK_SWITCH_TO_32K
+#ifdef CONFIG_ARCH_RK3066B
+	if(pmic_is_act8846()) {
+		cru_writel(CORE_CLK_DIV_W_MSK | CORE_CLK_DIV_MSK | CPU_CLK_DIV_W_MSK | CPU_CLK_DIV_MSK, CRU_CLKSELS_CON(0));
+		return;
+	}
+#endif
 		sram_cru_mode_con = cru_readl(CRU_MODE_CON);
 		sram_cru_clksel10_con = cru_readl(CRU_CLKSELS_CON(10));
 		cru_writel(PERI_ACLK_DIV_W_MSK | PERI_ACLK_DIV(4), CRU_CLKSELS_CON(10));
@@ -639,6 +645,12 @@ static void __sramfunc  rk_pm_soc_sram_sys_clk_resume(void)
 {
 
 #ifdef CONFIG_CLK_SWITCH_TO_32K
+#ifdef CONFIG_ARCH_RK3066B
+	if(pmic_is_act8846()) {
+		cru_writel(CORE_CLK_DIV_W_MSK | CPU_CLK_DIV_W_MSK | sram_cru_clksel0_con, CRU_CLKSELS_CON(0));
+		return;
+	}
+#endif
 	cru_writel((0xffff<<16) | sram_cru_mode_con, CRU_MODE_CON);
 	cru_writel(CORE_CLK_DIV_W_MSK | CPU_CLK_DIV_W_MSK | sram_cru_clksel0_con, CRU_CLKSELS_CON(0));
 	cru_writel(PERI_ACLK_DIV_W_MSK | sram_cru_clksel10_con, CRU_CLKSELS_CON(10));

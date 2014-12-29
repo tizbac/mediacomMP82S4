@@ -805,7 +805,7 @@ static void rk30_adc_battery_dcdet_delaywork(struct work_struct *work)
 	irq        = gpio_to_irq(pdata->dc_det_pin);
 	irq_flag = gpio_get_value (pdata->dc_det_pin) ? IRQF_TRIGGER_FALLING : IRQF_TRIGGER_RISING;
 
-	//rk28_send_wakeup_key(); // wake up the system
+	rk28_send_wakeup_key(); // wake up the system
 
 	free_irq(irq, NULL);
 	ret = request_irq(irq, rk30_adc_battery_dc_wakeup, irq_flag, "ac_charge_irq", NULL);// reinitialize the DC irq 
@@ -1236,7 +1236,7 @@ static void rk30_adc_battery_lowerpower_delaywork(struct work_struct *work)
 	}
 
 	printk("lowerpower\n");
- 	//rk28_send_wakeup_key(); // wake up the system	
+ 	rk28_send_wakeup_key(); // wake up the system	
 	return;
 }
 

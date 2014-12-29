@@ -23,9 +23,6 @@ board-$(CONFIG_MACH_RK3188_FPGA) += board-rk3188-fpga.o
 board-$(CONFIG_MACH_RK3188_TB) += ../mach-rk30/board-rk3168-tb.o
 board-$(CONFIG_MACH_RK3188_LR097) += ../mach-rk30/board-rk3168-LR097.o
 board-$(CONFIG_MACH_RK3188_DS1006H) += board-rk3188-ds1006h.o
+board-$(CONFIG_MACH_RK_YF) += board-rk3188-yf.o yfenv.o yfver.o
 board-$(CONFIG_MACH_RK3188_PHONEPAD) += ../mach-rk30/board-rk3168-phonepad.o
-board-$(CONFIG_MACH_RK3188_SKQ621) += board-sk3188-q621.o
-board-$(CONFIG_MACH_RK3188_SKQ026) += board-sk3188-q026.o
-board-$(CONFIG_MACH_RK3188_SKQ027) += board-sk3188-q027.o
-board-$(CONFIG_MACH_RK3188_SKQ028) += board-sk3188-q028.o
-board-$(CONFIG_MACH_RK3188_SKQ627) += board-sk3188-q627.o
+

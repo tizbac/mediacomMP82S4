@@ -7,6 +7,7 @@
 #include <mach/iomux.h>
 #include <linux/i2c.h>
 #include "rk610_hdmi.h"
+#include <mach/yfmach.h>
 
 struct rk610_hdmi_pdata *rk610_hdmi = NULL;
 struct hdmi *hdmi=NULL;
@@ -98,10 +99,15 @@ static irqreturn_t rk610_irq(int irq, void *dev_id)
 }
 #endif
 
+int lcd_supported(char * name);
 static int rk610_hdmi_i2c_probe(struct i2c_client *client,const struct i2c_device_id *id)
 {
     int rc = 0;
-	
+	int source = env_get_u32("hdmi_source_lcdc", HDMI_SOURCE_DEFAULT);
+
+	if(!lcd_supported("rkhdmi610")) {
+		return -ENODEV;
+	}
 	rk610_hdmi = kzalloc(sizeof(struct rk610_hdmi_pdata), GFP_KERNEL);
 	if(!rk610_hdmi)
 	{
@@ -120,7 +126,7 @@ static int rk610_hdmi_i2c_probe(struct i2c_client *client,const struct i2c_devic
 	memset(hdmi, 0, sizeof(struct hdmi));
 	hdmi->dev = &client->dev;
 	
-	if(HDMI_SOURCE_DEFAULT == HDMI_SOURCE_LCDC0)
+	if(source == HDMI_SOURCE_LCDC0)
 		hdmi->lcdc = rk_get_lcdc_drv("lcdc0");
 	else
 		hdmi->lcdc = rk_get_lcdc_drv("lcdc1");
@@ -130,8 +136,8 @@ static int rk610_hdmi_i2c_probe(struct i2c_client *client,const struct i2c_devic
 		rc = -ENXIO;
 		goto err_request_lcdc;
 	}
-	hdmi->xscale = 100;
-	hdmi->yscale = 100;
+	hdmi->xscale = 95;	// yftech
+	hdmi->yscale = 95;
 	hdmi->insert = rk610_hdmi_sys_insert;
 	hdmi->remove = rk610_hdmi_sys_remove;
 	hdmi->control_output = rk610_hdmi_sys_enalbe_output;

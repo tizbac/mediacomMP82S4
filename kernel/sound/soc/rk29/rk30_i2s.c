@@ -37,7 +37,7 @@
 #include "rk29_pcm.h"
 #include "rk29_i2s.h"
 
-
+#define ANDROID_REC
 #if 0
 #define I2S_DBG(x...) printk(KERN_INFO x)
 #else
@@ -89,6 +89,7 @@ static struct rk29_i2s_info rk29_i2s[MAX_I2S];
 
 struct snd_soc_dai_driver rk29_i2s_dai[MAX_I2S];
 EXPORT_SYMBOL_GPL(rk29_i2s_dai);
+#define CONFIG_SND_RK_SOC_HDMI_I2S
 #if defined (CONFIG_RK_HDMI) && defined (CONFIG_SND_RK_SOC_HDMI_I2S)
 extern int hdmi_get_hotplug(void);
 #endif
@@ -238,14 +239,9 @@ static int rockchip_i2s_set_fmt(struct snd_soc_dai *cpu_dai,
 			return -EINVAL;
 	}
 	I2S_DBG("Enter::%s----%d, I2S_TXCR=0x%X\n",__FUNCTION__,__LINE__,tx_ctl);
-#if 0//defined(CONFIG_SND_RK29_SOC_alc5631) || defined(CONFIG_SND_RK29_SOC_alc5621)
-	rx_ctl = tx_ctl;
-	rx_ctl &= ~I2S_MODE_MASK;   
-	rx_ctl |= I2S_SLAVE_MODE;  // set tx slave, rx master
-	writel(rx_ctl, &(pheadi2s->I2S_TXCR));
-#else
+
 	writel(tx_ctl, &(pheadi2s->I2S_TXCR));
-#endif
+
 	rx_ctl = tx_ctl & 0x00007FFF;
 	writel(rx_ctl, &(pheadi2s->I2S_RXCR));
 	return 0;
@@ -269,7 +265,7 @@ static int rockchip_i2s_hw_params(struct snd_pcm_substream *substream,
 	/* Working copies of register */
 	iismod = readl(&(pheadi2s->I2S_TXCR));
 	
-//	iismod &= (~((1<<5)-1));
+	iismod &= (~((1<<5)-1));
 	switch (params_format(params)) {
         case SNDRV_PCM_FORMAT_S8:
         	iismod |= SAMPLE_DATA_8bit;
@@ -307,14 +303,9 @@ static int rockchip_i2s_hw_params(struct snd_pcm_substream *substream,
 
 	writel(dmarc, &(pheadi2s->I2S_DMACR));
 	I2S_DBG("Enter %s, %d I2S_TXCR=0x%08X\n", __func__, __LINE__, iismod);  
-#if 0//defined(CONFIG_SND_RK29_SOC_alc5631) || defined(CONFIG_SND_RK29_SOC_alc5621)
-	dmarc = iismod;
-	dmarc &= ~I2S_MODE_MASK;   
-	dmarc |= I2S_SLAVE_MODE;     // set tx slave, rx master
-	writel(dmarc, &(pheadi2s->I2S_TXCR));
-#else
+
 	writel(iismod, &(pheadi2s->I2S_TXCR));
-#endif
+
 	iismod = iismod & 0x00007FFF;
 	writel(iismod, &(pheadi2s->I2S_RXCR));   
 
@@ -427,8 +418,8 @@ int rockchip_i2s_resume(struct snd_soc_dai *cpu_dai)
 #define rockchip_i2s_resume NULL
 #endif
 
-#if defined(CONFIG_SND_RK29_SOC_alc5631) || defined(CONFIG_SND_RK29_SOC_alc5621)
-#define ROCKCHIP_I2S_RATES (SNDRV_PCM_RATE_44100)  //zyy 20110704, playback and record use same sample rate
+#ifdef ANDROID_REC
+#define ROCKCHIP_I2S_RATES (SNDRV_PCM_RATE_44100 | SNDRV_PCM_RATE_48000)
 #else
 #define ROCKCHIP_I2S_RATES (SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_11025 |\
 		            SNDRV_PCM_RATE_16000 | SNDRV_PCM_RATE_22050 |\
@@ -609,11 +600,12 @@ static int __devinit rockchip_i2s_probe(struct platform_device *pdev)
 		break;
 	}	
 
-	dai->playback.rates = ROCKCHIP_I2S_RATES;
-	dai->playback.formats = SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE | SNDRV_PCM_FMTBIT_S24_LE;
+	dai->playback.rates = SNDRV_PCM_RATE_8000_192000;
+	dai->playback.formats = SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE |
+		SNDRV_PCM_FMTBIT_S24_LE| SNDRV_PCM_FMTBIT_S32_LE;
 	dai->capture.channels_min = 2;
 	dai->capture.channels_max = 2;
-	dai->capture.rates = ROCKCHIP_I2S_RATES;//;SNDRV_PCM_RATE_44100
+	dai->capture.rates = ROCKCHIP_I2S_RATES;
 	dai->capture.formats = SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE | SNDRV_PCM_FMTBIT_S24_LE;
 	dai->probe = rockchip_i2s_dai_probe; 
 	dai->ops = &rockchip_i2s_dai_ops;

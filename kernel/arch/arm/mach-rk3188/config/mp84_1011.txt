@@ -1,0 +1,94 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;YFMP84;;;;;;;;;;;;;;;;;;;;;;;;
+;@ env_size = 0x1000
+;@ env_magic = 0x5F454E56 ;_env
+;@  RK30_PIN%d_P%C%d = 160 32 8 1
+;@ GPIO_INVALID = 0xFFFFFFFF
+;@ mode = clear
+
+lcd_h_pw = 32
+lcd_h_bp = 80
+lcd_h_vd = 1280
+lcd_h_fp = 80
+
+lcd_v_pw = 5
+lcd_v_bp = 13
+lcd_v_vd = 800
+lcd_v_fp = 10
+
+lcd_width = 217
+lcd_height = 135
+lcd_clk = 71110000
+lcd_bl_min = 50
+lcd_bl_max = 140
+
+; LVDS_8BIT_1
+lcd_out_format = 0
+lcd_out_type = 2
+
+hdmi_source_lcdc = 1
+hdmi_supported = 0
+
+ctp_supproted = gt9xx byd693x
+ctp_gt9xx_id = 0x00000084
+
+acc_dir = 5
+acc_dir_mma8452 = 7
+
+mmc_cd_polarity = 1
+
+wifi_supproted = AP6210
+
+rk616_speak_ctl = RK30_PIN3_PD7
+rk616_hp_ctl = RK30_PIN2_PD7
+aw8155_supproted = 1
+
+cam_name0 = gc2035
+cam_addr0= 0x0000003c
+cam_flag0 = 4
+cam_pd0 = RK30_PIN3_PB5
+
+cam_name1 = gc0329
+cam_addr1= 0x00000031
+cam_flag1 = 4
+cam_pd1 = RK30_PIN3_PB4
+
+power_max_vol = 4750
+power_bat_rdc = 70
+power_vol_coff1 = 307500 ;4800 : 1023
+power_vol_coff2 = 0
+power_ac_gpio = RK30_PIN0_PB2
+power_ac_level = 0
+power_charge_gpio = RK30_PIN0_PA6
+power_switch_gpio = RK30_PIN0_PC7
+power_status_coff1 = 6000
+power_status_coff2 = 52429
+power_cur_channel = 2
+power_v2c_table = 3562, 0, 3661, 4, 3700, 12, 3755, 27, 3779, 39, 3822, 53, 3920, 70, 4089, 93, 4155, 100
+
+axp22_supproted = 1
+
+otg_5v_ctrl  = RK30_PIN0_PA3
+otg_drv_vbus = RK30_PIN3_PD5
+vcc_5v_ctrl = RK30_PIN0_PB1
+
+battery_capacity = 9200
+
+; 开机充电电流
+STACHGCUR = 900
+; 关屏充电电流
+EARCHGCUR = 900
+; 休眠充电电流
+SUSCHGCUR = 1200
+; 关机充电电流
+CLSCHGCUR = 1200
+
+;@ mode = append
+init = on init
+init = setprop persist.sys.language zh
+init = setprop persist.sys.country CN
+init = setprop persist.sys.timezone Asia/Shanghai
+init = setprop ro.product.model MP84
+init = setprop ro.product.brand yftech
+init = setprop ro.product.name mp84
+init = setprop ro.product.device mp84
+init = setprop ro.rk.bt_enable true

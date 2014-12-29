@@ -84,8 +84,8 @@ enum _codec_pll {
 #else
 
 #ifdef CONFIG_ARCH_RK3066B
-#define codec_pll_default codec_pll_594mhz
-#define periph_pll_default periph_pll_384mhz
+#define codec_pll_default codec_pll_798mhz
+#define periph_pll_default periph_pll_297mhz
 
 #else 
 #define codec_pll_default codec_pll_1200mhz

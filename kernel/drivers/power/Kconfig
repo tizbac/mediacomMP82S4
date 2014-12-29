@@ -364,3 +364,4 @@ config TWL60xx_VBAT_LOW_DETECTION
 	default n
 
 endif # POWER_SUPPLY
+source "drivers/power/axp_power/Kconfig"

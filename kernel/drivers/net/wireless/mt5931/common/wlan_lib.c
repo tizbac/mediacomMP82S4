@@ -1060,82 +1060,6 @@ PFN_OID_HANDLER_FUNC apfnOidWOTimeoutCheck[] = {
 ********************************************************************************
 */
 
-
-/*----------------------------------------------------------------------------*/
-/*!
-* \brief This function will search the CMD Queue to look for the pending OID and
-*        compelete it immediately when system request a reset.
-*
-* \param prAdapter  ointer of Adapter Data Structure
-*
-* \return (none)
-*/
-/*----------------------------------------------------------------------------*/
-VOID
-wlanReleasePendingOid (
-    IN P_ADAPTER_T  prAdapter,
-    IN UINT_32      u4Data
-    )
-{
-    P_QUE_T prCmdQue;
-    QUE_T rTempCmdQue;
-    P_QUE_T prTempCmdQue = &rTempCmdQue;
-    P_QUE_ENTRY_T prQueueEntry = (P_QUE_ENTRY_T)NULL;
-    P_CMD_INFO_T prCmdInfo = (P_CMD_INFO_T)NULL;
-
-    KAL_SPIN_LOCK_DECLARATION();
-
-    DEBUGFUNC("wlanReleasePendingOid");
-
-    ASSERT(prAdapter);
-
-    DBGLOG(INIT, ERROR, ("OID Timeout! Releasing pending OIDs ..\n"));
-
-    do {
-        // 1: Clear Pending OID in prAdapter->rPendingCmdQueue
-        KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
-
-        prCmdQue = &prAdapter->rPendingCmdQueue;
-        QUEUE_MOVE_ALL(prTempCmdQue, prCmdQue);
-
-        QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry, P_QUE_ENTRY_T);
-        while (prQueueEntry) {
-            prCmdInfo = (P_CMD_INFO_T)prQueueEntry;
-
-            if (prCmdInfo->fgIsOid) {
-                if (prCmdInfo->pfCmdTimeoutHandler) {
-                    prCmdInfo->pfCmdTimeoutHandler(prAdapter, prCmdInfo);
-                }
-                else
-                    kalOidComplete(prAdapter->prGlueInfo,
-                            prCmdInfo->fgSetQuery,
-                            0,
-                            WLAN_STATUS_FAILURE);
-
-                cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
-            }
-            else {
-                QUEUE_INSERT_TAIL(prCmdQue, prQueueEntry);
-            }
-
-            QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry, P_QUE_ENTRY_T);
-        }
-
-        KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
-
-        // 2: Clear pending OID in glue layer command queue
-        kalOidCmdClearance(prAdapter->prGlueInfo);
-
-        // 3: Clear pending OID queued in pvOidEntry with REQ_FLAG_OID set
-        kalOidClearance(prAdapter->prGlueInfo);
-
-    } while(FALSE);
-
-    return;
-}
-
-
-
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -2391,6 +2315,78 @@ wlanReleaseCommand (
 } /* end of wlanReleaseCommand() */
 
 
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This function will search the CMD Queue to look for the pending OID and
+*        compelete it immediately when system request a reset.
+*
+* \param prAdapter  ointer of Adapter Data Structure
+*
+* \return (none)
+*/
+/*----------------------------------------------------------------------------*/
+VOID
+wlanReleasePendingOid (
+    IN P_ADAPTER_T  prAdapter,
+    IN UINT_32      u4Data
+    )
+{
+    P_QUE_T prCmdQue;
+    QUE_T rTempCmdQue;
+    P_QUE_T prTempCmdQue = &rTempCmdQue;
+    P_QUE_ENTRY_T prQueueEntry = (P_QUE_ENTRY_T)NULL;
+    P_CMD_INFO_T prCmdInfo = (P_CMD_INFO_T)NULL;
+
+    KAL_SPIN_LOCK_DECLARATION();
+
+    DEBUGFUNC("wlanReleasePendingOid");
+
+    ASSERT(prAdapter);
+
+    DBGLOG(INIT, ERROR, ("OID Timeout! Releasing pending OIDs ..\n"));
+
+    do {
+        // 1: Clear Pending OID in prAdapter->rPendingCmdQueue
+        KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+
+        prCmdQue = &prAdapter->rPendingCmdQueue;
+        QUEUE_MOVE_ALL(prTempCmdQue, prCmdQue);
+
+        QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry, P_QUE_ENTRY_T);
+        while (prQueueEntry) {
+            prCmdInfo = (P_CMD_INFO_T)prQueueEntry;
+
+            if (prCmdInfo->fgIsOid) {
+                if (prCmdInfo->pfCmdTimeoutHandler) {
+                    prCmdInfo->pfCmdTimeoutHandler(prAdapter, prCmdInfo);
+                }
+                else
+                    kalOidComplete(prAdapter->prGlueInfo,
+                            prCmdInfo->fgSetQuery,
+                            0,
+                            WLAN_STATUS_FAILURE);
+
+                cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+            }
+            else {
+                QUEUE_INSERT_TAIL(prCmdQue, prQueueEntry);
+            }
+
+            QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry, P_QUE_ENTRY_T);
+        }
+
+        KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+
+        // 2: Clear pending OID in glue layer command queue
+        kalOidCmdClearance(prAdapter->prGlueInfo);
+
+        // 3: Clear pending OID queued in pvOidEntry with REQ_FLAG_OID set
+        kalOidClearance(prAdapter->prGlueInfo);
+
+    } while(FALSE);
+
+    return;
+}
 
 
 /*----------------------------------------------------------------------------*/

@@ -610,4 +610,4 @@ static int __init populate_rootfs(void)
 	}
 	return 0;
 }
-rootfs_initcall(populate_rootfs);
+arch_initcall_sync(populate_rootfs);

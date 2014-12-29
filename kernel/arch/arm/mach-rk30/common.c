@@ -206,8 +206,10 @@ static void usb_uart_init(void)
 #endif
 }
 
+unsigned env_get_u32(char *name, unsigned value);
 void __init rk30_map_io(void)
 {
+	int freq = env_get_u32("ddr_init_freq", 300);
 	rk30_map_common_io();
 	usb_uart_init();
 	rk29_setup_early_printk();
@@ -215,7 +217,7 @@ void __init rk30_map_io(void)
 	rk29_sram_init();
 	board_clock_init();
 	rk30_l2_cache_init();
-	ddr_init(DDR_TYPE, DDR_FREQ);
+	ddr_init(DDR_TYPE, freq);
 	clk_disable_unused();
 	rk30_iomux_init();
 	rk30_boot_mode_init();

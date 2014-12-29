@@ -1,0 +1,102 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;YFMP73;;;;;;;;;;;;;;;;;;;;;;;;
+;@ env_size = 0x1000
+;@ env_magic = 0x5F454E56 ;_env
+;@  RK30_PIN%d_P%C%d = 160 32 8 1
+;@ GPIO_INVALID = 0xFFFFFFFF
+;@ mode = clear
+
+lcd_h_pw = 5
+lcd_h_bp = 32
+lcd_h_vd = 800
+lcd_h_fp = 27
+
+lcd_v_pw = 32
+lcd_v_bp = 80
+lcd_v_vd = 1280
+lcd_v_fp = 48
+
+lcd_width = 160
+lcd_height = 120
+
+lcd_bl_min = 25
+lcd_bl_max = 255
+lcd_ipp_rotation = 90
+lcd_logo_rotation = 180
+lcd_out_face = 0x00000021
+lcd_pwm_pol = 1
+
+ctp_supproted = byd693x ilitek gt82x ft5x06 gslX680
+ft5x_ts_fw=auto
+ctp_ilitek_x_flag = 0
+ctp_ilitek_y_flag = 1
+ctp_ilitek_x_y_flag = 1
+
+ctp_byd6932_x_flag = 1
+ctp_byd6932_y_flag = 1
+ctp_byd6932_x_y_flag = 1
+
+acc_dir = 5
+acc_dir_mma8452 = 4
+
+wifi_supproted = AP6181
+
+cam_name0 = sp2518
+cam_addr0 = 0x00000030
+cam_flag0 = 0x00000004
+cam_pd0 = RK30_PIN3_PB5
+cam_orient0 = 90
+
+cam_name2 = gc2035
+cam_addr2 = 0x0000003c
+cam_flag2 = 4
+cam_pd2 = RK30_PIN3_PB5
+cam_orient2 = 90
+
+cam_name4 =BF3A20
+cam_addr4 = 0x0000006E
+cam_flag4 = 4
+cam_pd4 = RK30_PIN3_PB5
+cam_orient4 = 90
+
+cam_name1 = sp0718
+cam_pd1 = RK30_PIN3_PB4
+cam_flag1 = 4
+cam_addr1= 0x00000021
+cam_orient1 =90
+
+cam_name3 = gc0308
+cam_pd3 = RK30_PIN3_PB4
+cam_flag3 = 4
+cam_addr3 = 0x00000021
+cam_orient3 = 90
+
+cam_name5 = BF3703
+cam_pd5 = RK30_PIN3_PB4
+cam_flag5 = 4
+cam_addr5= 0x0000006E
+cam_orient5 = 270
+
+power_max_vol = 4750
+power_bat_rdc = 70
+power_vol_coff1 = 307500 ;4800 : 1023
+power_vol_coff2 = 0
+power_ac_gpio = RK30_PIN0_PB2
+power_ac_level = 0
+power_charge_gpio = RK30_PIN0_PA6
+power_switch_gpio = RK30_PIN0_PC7
+power_status_coff1 = 6000
+power_status_coff2 = 52429
+power_cur_channel = 2
+power_v2c_table = 3562, 0, 3661, 4, 3700, 12, 3755, 27, 3779, 39, 3822, 53, 3920, 70, 4089, 93, 4155, 100
+
+;@ mode = append
+init = on init
+init = setprop persist.sys.language zh
+init = setprop persist.sys.country CN
+init = setprop persist.sys.timezone Asia/Shanghai
+init = setprop ro.product.model MP73
+init = setprop ro.product.brand yftech
+init = setprop ro.product.name mp73
+init = setprop ro.product.device mp73
+init = setprop ro.sf.hwrotation 180
+

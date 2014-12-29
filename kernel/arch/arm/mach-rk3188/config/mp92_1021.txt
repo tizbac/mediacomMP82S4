@@ -1,0 +1,96 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;YFMP921021;;;;;;;;;;;;;;;;;;;;;;;;
+;@ env_size = 0x1000
+;@ env_magic = 0x5F454E56 ;_env
+;@  RK30_PIN%d_P%C%d = 160 32 8 1
+;@ GPIO_INVALID = 0xFFFFFFFF
+;@ mode = clear
+
+lcd_h_pw = 20
+lcd_h_bp = 15
+lcd_h_vd = 1280
+lcd_h_fp = 15
+
+lcd_v_pw = 6
+lcd_v_bp = 3
+lcd_v_vd = 800
+lcd_v_fp = 3
+
+lcd_width = 196
+lcd_height = 147
+lcd_clk = 65000000
+lcd_logo_rotation = 180
+lcd_ipp_rotation = 180
+lcd_out_format = 0
+
+lcd_bl_min = 65
+lcd_bl_max = 120
+lcd_en2_pgio = RK30_PIN0_PB0
+
+ctp_supproted = byd693x ft5x06
+ctp_byd6932_x_flag = 1
+ctp_byd6932_y_flag = 1
+ctp_byd6932_pn = 10
+
+ctp_ft5x_ts_x_flag = 1
+ctp_ft5x_ts_y_flag = 1
+
+acc_dir = 7
+
+wifi_supproted = AIDC
+
+sp2518_cfg = 1
+
+cam_name0 = ov5640
+cam_addr0= 0x0000003c
+cam_flag0 = 4
+cam_pd0 = RK30_PIN3_PB5
+cam_orient0 = 180
+
+cam_name2 = sp2518
+cam_addr2= 0x00000030
+cam_flag2 = 4
+cam_pd2 = RK30_PIN3_PB5
+cam_orient2 = 180
+
+cam_name1 = sp2518
+cam_addr1= 0x00000030
+cam_flag1 = 4
+cam_pd1 = RK30_PIN3_PB4
+cam_orient1 = 180
+
+cam_name3 = sp0718
+cam_addr3= 0x00000021
+cam_flag3 = 4
+cam_pd3 = RK30_PIN3_PB4
+cam_orient3 = 180
+
+power_max_vol = 4750
+power_bat_rdc = 68
+power_vol_coff1 = 307500 ;4800 : 1023
+power_vol_coff2 = 0
+power_ac_gpio = RK30_PIN0_PB2
+power_ac_level = 0
+power_charge_gpio = RK30_PIN0_PA6
+power_switch_gpio = RK30_PIN0_PC7
+power_status_coff1 = 6000
+power_status_coff2 = 52429
+power_cur_channel = 2
+power_v2c_table = 3604, 0, 3767, 21, 3781, 28, 3793, 40, 3807, 47, 3907, 67, 4022, 87, 4129, 99, 4144, 100
+
+battery_capacity = 7000
+
+volume_in_capture = 20
+
+;@ mode = append
+init = on init
+init = setprop persist.sys.language zh
+init = setprop persist.sys.country CN
+init = setprop persist.sys.timezone Asia/Shanghai
+init = setprop ro.product.model MP921021
+init = setprop ro.product.brand yftech
+init = setprop ro.product.name mp921021
+init = setprop ro.product.device mp921021
+init = setprop ro.sf.hwrotation 180
+init = setprop ro.sf.hdmirotation 0
+init = setprop ro.battery.capacity 7000
+

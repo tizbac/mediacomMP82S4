@@ -31,7 +31,7 @@
 #include <asm/uaccess.h>
 #include <mach/iomux.h>
 #include "rk3188_lcdc.h"
-
+#include <mach/yfmach.h>
 
 
 static int dbg_thresd = 0;
@@ -181,7 +181,7 @@ static int rk3188_lcdc_reg_update(struct rk_lcdc_device_driver *dev_drv)
 		spin_lock_irqsave(&dev_drv->cpl_lock,flags);
 		init_completion(&dev_drv->frame_done);
 		spin_unlock_irqrestore(&dev_drv->cpl_lock,flags);
-		timeout = wait_for_completion_timeout(&dev_drv->frame_done,msecs_to_jiffies(dev_drv->cur_screen->ft+5));
+		timeout = wait_for_completion_timeout(&dev_drv->frame_done,msecs_to_jiffies(dev_drv->cur_screen->ft+25));	// yftech, mp91
 		if(!timeout&&(!dev_drv->frame_done.done))
 		{
 			printk(KERN_ERR "wait for new frame start time out!\n");
@@ -447,6 +447,7 @@ static void rk3188_lcdc_deint(struct rk3188_lcdc_device * lcdc_dev)
 		spin_unlock(&lcdc_dev->reg_lock);
 	}
 	mdelay(1);
+	rk3188_lcdc_clk_disable(lcdc_dev);
 	
 }
 
@@ -465,7 +466,7 @@ static int rk3188_load_screen(struct rk_lcdc_device_driver *dev_drv, bool initsc
 	u16 upper_margin = screen->upper_margin;
 	u16 x_res = screen->x_res;
 	u16 y_res = screen->y_res;
-
+	u8  dither_down_sel = env_get_u32("lcd_dither_down", 1);
 	spin_lock(&lcdc_dev->reg_lock);
 	if(likely(lcdc_dev->clk_on))
 	{
@@ -481,30 +482,28 @@ static int rk3188_load_screen(struct rk_lcdc_device_driver *dev_drv, bool initsc
 			face = OUT_P565;  //dither down to rgb565
 			lcdc_msk_reg(lcdc_dev, DSP_CTRL0, m_DITHER_DOWN_EN | m_DITHER_DOWN_MODE |
 				 m_DITHER_DOWN_SEL,v_DITHER_DOWN_EN(1) | v_DITHER_DOWN_MODE(0) |
-				 v_DITHER_DOWN_SEL(1));
+				 v_DITHER_DOWN_SEL(dither_down_sel));
 			break;
 		case OUT_P666:
 			face = OUT_P666; //dither down to rgb666
 			lcdc_msk_reg(lcdc_dev, DSP_CTRL0, m_DITHER_DOWN_EN | m_DITHER_DOWN_MODE |
 				m_DITHER_DOWN_SEL, v_DITHER_DOWN_EN(1) | v_DITHER_DOWN_MODE(1) |
-				v_DITHER_DOWN_SEL(1));
+				v_DITHER_DOWN_SEL(dither_down_sel));
 			break;
 		case OUT_D888_P565:
 			face = OUT_P888;
 			lcdc_msk_reg(lcdc_dev, DSP_CTRL0, m_DITHER_DOWN_EN | m_DITHER_DOWN_MODE |
 				m_DITHER_DOWN_SEL, v_DITHER_DOWN_EN(1) | v_DITHER_DOWN_MODE(0) |
-				v_DITHER_DOWN_SEL(1));
+				v_DITHER_DOWN_SEL(dither_down_sel));
 			break;
 		case OUT_D888_P666:
 			face = OUT_P888;
 			lcdc_msk_reg(lcdc_dev, DSP_CTRL0, m_DITHER_DOWN_EN | m_DITHER_DOWN_MODE |
 				m_DITHER_DOWN_SEL, v_DITHER_DOWN_EN(1) | v_DITHER_DOWN_MODE(1) |
-				v_DITHER_DOWN_SEL(1));
+				v_DITHER_DOWN_SEL(dither_down_sel));
 			break;
 		case OUT_P888:
 			face = OUT_P888;
-			lcdc_msk_reg(lcdc_dev,DSP_CTRL0,m_DITHER_DOWN_EN | m_DITHER_UP_EN,
-					v_DITHER_DOWN_EN(0) | v_DITHER_UP_EN(0));
 			break;
 		default:
 			printk("unsupported display output interface!\n");
@@ -907,6 +906,11 @@ static int rk3188_lcdc_early_suspend(struct rk_lcdc_device_driver *dev_drv)
 	struct rk3188_lcdc_device *lcdc_dev = 
 		container_of(dev_drv,struct rk3188_lcdc_device,driver);
 
+    //wuhao
+    lcdc_msk_reg(lcdc_dev,DSP_CTRL1,m_BLACK_EN,v_BLACK_EN(1));
+    lcdc_cfg_done(lcdc_dev);
+    msleep(25);
+
 	if(dev_drv->screen0->standby)
 		dev_drv->screen0->standby(1);
 	if(dev_drv->screen_ctr_info->io_disable)
@@ -926,6 +930,7 @@ static int rk3188_lcdc_early_suspend(struct rk_lcdc_device_driver *dev_drv)
 		return 0;
 	}
 
+	mdelay(25);
 	rk3188_lcdc_clk_disable(lcdc_dev);
 	return 0;
 }
@@ -937,7 +942,22 @@ static int rk3188_lcdc_early_resume(struct rk_lcdc_device_driver *dev_drv)
 	int i=0;
 	int __iomem *c;
 	int v;
+	
+	if(dev_drv->screen0->standby)
+		dev_drv->screen0->standby(0);	      //screen wake up
 
+       	 //wuhao
+	 #if 1
+       lcdc_msk_reg(lcdc_dev,DSP_CTRL1,m_BLACK_EN,v_BLACK_EN(1));
+       lcdc_cfg_done(lcdc_dev);
+       msleep(25);
+       #endif
+	#if 1
+       lcdc_msk_reg(lcdc_dev,DSP_CTRL1,m_BLACK_EN,v_BLACK_EN(0));
+       lcdc_cfg_done(lcdc_dev);
+       msleep(25);
+       #endif
+       
 	if(dev_drv->screen_ctr_info->io_enable) 		//power on
 		dev_drv->screen_ctr_info->io_enable();
 	
@@ -972,8 +992,8 @@ static int rk3188_lcdc_early_resume(struct rk_lcdc_device_driver *dev_drv)
 	if(!lcdc_dev->atv_layer_cnt)
 		rk3188_lcdc_clk_disable(lcdc_dev);
 
-	if(dev_drv->screen0->standby)
-		dev_drv->screen0->standby(0);	      //screen wake up
+	//if(dev_drv->screen0->standby)
+	//	dev_drv->screen0->standby(0);	      //screen wake up
 	
 	return 0;
 }
@@ -1513,11 +1533,32 @@ static int __devexit rk3188_lcdc_remove(struct platform_device *pdev)
 
 static void rk3188_lcdc_shutdown(struct platform_device *pdev)
 {
+	int i = 0;
+	int ret = 0;
 	struct rk3188_lcdc_device *lcdc_dev = platform_get_drvdata(pdev);
 	if(lcdc_dev->driver.cur_screen->standby) //standby the screen if necessary
 		lcdc_dev->driver.cur_screen->standby(1);
 	if(lcdc_dev->driver.screen_ctr_info->io_disable) //power off the screen if necessary
 		lcdc_dev->driver.screen_ctr_info->io_disable();
+	if(lcdc_dev->driver.cur_screen->sscreen_set) //turn off  lvds if necessary
+		lcdc_dev->driver.cur_screen->sscreen_set(lcdc_dev->driver.cur_screen , 0);
+
+	if(pdev->id == 1)
+	{
+		for(i=0;i<4;i++)
+		{
+			ret += gpio_request(RK30_PIN2_PD0 + i, NULL);
+			gpio_direction_output(RK30_PIN2_PD0 + i, 0); 
+		}
+
+		for(i=RK30_PIN2_PA0;i<=RK30_PIN2_PC7;i++)
+		{
+			ret += gpio_request(i, NULL);
+			gpio_direction_output(i, 0); 
+		}
+		printk("mux lcdc1 io to gpio\n");
+	}
+
 	rk3188_lcdc_deint(lcdc_dev);
 	rk_fb_unregister(&(lcdc_dev->driver));	
 }

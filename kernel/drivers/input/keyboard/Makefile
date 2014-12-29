@@ -5,8 +5,6 @@
 # Each configuration option enables a list of files.
 
 obj-$(CONFIG_KEYS_RK29)			+= rk29_keys.o
-obj-$(CONFIG_RK_REMOTECTL)        += rkxx_remotectl.o
-obj-$(CONFIG_SK_VIRTUAL)        += touch_virtual.o
 obj-$(CONFIG_KEYBOARD_ADP5520)		+= adp5520-keys.o
 obj-$(CONFIG_KEYBOARD_ADP5588)		+= adp5588-keys.o
 obj-$(CONFIG_KEYBOARD_ADP5589)		+= adp5589-keys.o

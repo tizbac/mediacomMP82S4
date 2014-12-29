@@ -73,7 +73,7 @@
 //0x0000 ~ 0xF42					
 #define Volume_Output 0xF42
 //0x0 ~ 0x3f(bit0-bit5)	 max=0x0(+6DB) min=0x3f(-60DB)	//Analog Gain
-#define Volume_Codec_PA 0x0
+static u8 Volume_Codec_PA = 0x0;	// yftech
 
 //rk610 input volume,rk610 can not adjust the recording volume 
 #define Volume_Input 0x07
@@ -121,7 +121,140 @@ struct rk610_codec_priv {
 	struct rk610_codec_platform_data *pdata;
 };
 
-void codec_set_spk(bool on)
+// yftech
+#include <mach/yfmach.h>
+#include <linux/power_supply.h>
+extern int adc_get_status(void);
+static int rk610_codec_write(struct snd_soc_codec *codec, unsigned int reg, unsigned int value);
+
+static bool spk_ctrl_io_value;
+// bit0: 耳机, bit1: hdmi
+static int force_off_spk;
+// 录音时的最大音量, 0x00~0x3f
+static int volume_in_capture;
+static int volume_in_ac;
+// bit0: 播放，bit1: 录音
+static u8 stream_state;
+
+struct work_struct dac_mute_work;
+
+static void dac_mute_work_fun(struct work_struct *work)
+{
+	struct rk610_codec_priv *rk610_codec;
+	int value;
+
+	if(!rk610_codec_codec)
+		return;
+	
+	rk610_codec = snd_soc_codec_get_drvdata(rk610_codec_codec);
+	if(!rk610_codec)
+		return;
+
+	if (force_off_spk) {
+		Volume_Codec_PA = 0x3f;
+		rk610_codec_write(rk610_codec_codec,ACCELCODEC_R17, 0xFF);  //AOL
+		rk610_codec_write(rk610_codec_codec,ACCELCODEC_R18, 0xFF);  //AOR
+	} else {
+		Volume_Codec_PA = 0x00;
+		if(stream_state == 0x03){
+			Volume_Codec_PA = volume_in_capture;
+		}else if(adc_get_status() & (STATUS_CHARGING|STATUS_CHARGE_DONE)){
+			Volume_Codec_PA = volume_in_ac;
+		}
+		printk("Volume_Codec_PA=%d\n",Volume_Codec_PA);
+		rk610_codec_write(rk610_codec_codec,ACCELCODEC_R17, Volume_Codec_PA|ASC_OUTPUT_ACTIVE|ASC_CROSSZERO_EN);  //AOL Volume_Codec_PA|ASC_OUTPUT_ACTIVE|ASC_CROSSZERO_EN);  //AOL
+		rk610_codec_write(rk610_codec_codec,ACCELCODEC_R18, Volume_Codec_PA|ASC_OUTPUT_ACTIVE|ASC_CROSSZERO_EN); //Volume_Codec_PA|ASC_OUTPUT_ACTIVE|ASC_CROSSZERO_EN);  //AOR
+    }
+
+	value = force_off_spk ? GPIO_LOW : spk_ctrl_io_value;
+	gpio_set_value(rk610_codec->spk_ctrl_io, value);
+}
+
+static void yf_gpio_set_value(unsigned gpio, int value)
+{
+	struct rk610_codec_priv *rk610_codec;
+
+	spk_ctrl_io_value = !!value;
+	if(!rk610_codec_codec)
+		return;
+
+	rk610_codec = snd_soc_codec_get_drvdata(rk610_codec_codec);
+	if(!rk610_codec)
+		return;
+
+	value = force_off_spk ? GPIO_LOW : value;
+	gpio_set_value(rk610_codec->spk_ctrl_io, value);
+}
+
+void earphone_mute_spk(int mute)
+{
+	struct rk610_codec_priv *rk610_codec;
+	int value;
+
+	force_off_spk = (force_off_spk & ~0x01) | (!!mute);
+
+	if(!rk610_codec_codec)
+		return;
+
+	rk610_codec = snd_soc_codec_get_drvdata(rk610_codec_codec);
+	if(!rk610_codec)
+		return;
+
+	value = force_off_spk ? GPIO_LOW : spk_ctrl_io_value;
+	if (value == GPIO_LOW) {
+		gpio_set_value(rk610_codec->spk_ctrl_io, value);
+	}
+
+	schedule_work(&dac_mute_work);
+}
+
+static void hdmi_mute_spk(int mute)
+{
+	struct rk610_codec_priv *rk610_codec;
+	int value;
+
+	force_off_spk = (force_off_spk & ~0x02) | (mute ? 0x02: 0x00);
+
+	schedule_work(&dac_mute_work);
+}
+
+static int pcm_startup(struct snd_pcm_substream * sub, struct snd_soc_dai * dai)
+{
+	stream_state |= ((sub->stream == SNDRV_PCM_STREAM_PLAYBACK) ? 0x01:0x02);
+	if (stream_state == 0x03) {
+		schedule_work(&dac_mute_work);
+	}
+	return 0;
+}
+
+static void pcm_shutdown(struct snd_pcm_substream * sub, struct snd_soc_dai * dai)
+{
+	int old = stream_state;
+
+	stream_state &= ~((sub->stream == SNDRV_PCM_STREAM_PLAYBACK) ? 0x01:0x02);
+	if (old == 0x03) {
+		schedule_work(&dac_mute_work);
+	}
+}
+
+void rk610_codec_shutdown(struct i2c_client * client)
+{
+	struct rk610_codec_priv *rk610_codec;
+
+	rk610_codec = snd_soc_codec_get_drvdata(rk610_codec_codec);
+	if(!rk610_codec)
+		return;
+
+	rk610_codec_write(rk610_codec_codec,ACCELCODEC_R17, 0xFF);
+	rk610_codec_write(rk610_codec_codec,ACCELCODEC_R18, 0xFF);
+	gpio_set_value(rk610_codec->spk_ctrl_io, GPIO_LOW);
+}
+
+#undef  gpio_set_value
+#define gpio_set_value	yf_gpio_set_value
+// end
+
+void codec610_set_spk(bool on)
 {
 	struct rk610_codec_priv *rk610_codec;
 	if(!rk610_codec_codec)
@@ -132,12 +265,9 @@ void codec_set_spk(bool on)
 		return;
 	
 	rk610_codec->hdmi_ndet = on;
-	if(on)
-		gpio_set_value(rk610_codec->spk_ctrl_io, GPIO_HIGH);
-	else
-		gpio_set_value(rk610_codec->spk_ctrl_io, GPIO_LOW);			
+	hdmi_mute_spk(!on);
 }
-EXPORT_SYMBOL(codec_set_spk);
+EXPORT_SYMBOL(codec610_set_spk);
 
 /*
  * read rk610 register cache
@@ -618,10 +748,12 @@ static void rk610_delayedwork_fun(struct work_struct *work)
 		rk610_codec_write(codec,ACCELCODEC_R1F, 0x09|ASC_PDMIXM_ENABLE|ASC_PDPAM_ENABLE);
 		#endif
 	}
-	spk_ctrl_fun(GPIO_HIGH);
+// yftech	spk_ctrl_fun(GPIO_HIGH);
 }
 
 static struct snd_soc_dai_ops rk610_codec_ops = {
+	.startup = pcm_startup,		// yftech
+	.shutdown = pcm_shutdown,		// yftech
 	.hw_params = rk610_codec_pcm_hw_params,
 	.set_fmt = rk610_codec_set_dai_fmt,
 	.set_sysclk = rk610_codec_set_dai_sysclk,
@@ -685,6 +817,7 @@ void rk610_codec_reg_set(void)
 	unsigned int mic_vol = Volume_Input;
 	rk610_codec_write(codec,ACCELCODEC_R1D, 0x30);
 	rk610_codec_write(codec,ACCELCODEC_R1E, 0x40);
+	msleep(50);
 
 #ifdef USE_LPF
 	// Route R-LPF->R-Mixer, L-LPF->L-Mixer
@@ -726,7 +859,7 @@ void rk610_codec_reg_set(void)
     rk610_codec_write(codec,ACCELCODEC_R0A, ASC_NORMAL_MODE|(0x10 << 1)|ASC_CLKNODIV|ASC_CLK_DISABLE);
     gR0AReg = ASC_NORMAL_MODE|(0x10 << 1)|ASC_CLKNODIV|ASC_CLK_DISABLE;
     //2Config audio  interface
-    rk610_codec_write(codec,ACCELCODEC_R09, ASC_I2S_MODE|ASC_16BIT_MODE|ASC_NORMAL_LRCLK|ASC_LRSWAP_DISABLE|ASC_MASTER_MODE|ASC_NORMAL_BCLK);
+    rk610_codec_write(codec,ACCELCODEC_R09, ASC_I2S_MODE|ASC_16BIT_MODE|ASC_NORMAL_LRCLK|ASC_LRSWAP_DISABLE|ASC_NORMAL_BCLK);
     rk610_codec_write(codec,ACCELCODEC_R00, ASC_HPF_ENABLE|ASC_DSM_MODE_ENABLE|ASC_SCRAMBLE_ENABLE|ASC_DITHER_ENABLE|ASC_BCLKDIV_4);
     //2volume,input,output
     digital_gain = Volume_Output;
@@ -781,6 +914,11 @@ static int rk610_codec_probe(struct snd_soc_codec *codec)
 	}
 
 	INIT_DELAYED_WORK(&rk610_codec->rk610_delayed_work, rk610_delayedwork_fun);
+	// yftech
+	INIT_WORK(&dac_mute_work, dac_mute_work_fun);
+	volume_in_capture = env_get_u32("volume_in_capture", 0x00);
+	volume_in_ac = env_get_u32("volume_in_ac", 0x00);
+	// end
 	
 //old control method,please filling rk610_codec_platform_data into Board-xx-xx.c
 //qjb 2013-01-14
@@ -847,6 +985,7 @@ static struct snd_soc_codec_driver soc_codec_dev_rk610_codec = {
 };
 
 #if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
+int lcd_supported(char * name);
 static int rk610_codec_i2c_probe(struct i2c_client *i2c,
 			    const struct i2c_device_id *id)
 {
@@ -854,6 +993,9 @@ static int rk610_codec_i2c_probe(struct i2c_client *i2c,
 	struct rk610_codec_platform_data *pdata = i2c->dev.platform_data;
 	int ret;
 	DBG("%s start\n", __FUNCTION__);
+	if(!lcd_supported("rkhdmi610")) {
+		return -ENODEV;
+	}
 	rk610_codec = kzalloc(sizeof(struct rk610_codec_priv), GFP_KERNEL);
 	if (rk610_codec == NULL)
 		return -ENOMEM;
@@ -907,6 +1049,7 @@ static struct i2c_driver rk610_codec_i2c_driver = {
 	.probe = rk610_codec_i2c_probe,
 	.remove = rk610_codec_i2c_remove,
 	.id_table = rk610_codec_i2c_id,
+	.shutdown = rk610_codec_shutdown,
 };
 #endif
 

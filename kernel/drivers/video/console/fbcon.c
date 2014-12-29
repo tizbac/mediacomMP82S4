@@ -903,6 +903,7 @@ static int var_to_display(struct display *disp,
 static void display_to_var(struct fb_var_screeninfo *var,
 			   struct display *disp)
 {
+    printk("%p disp->mode, %p var \n",disp->mode,var);
 	fb_videomode_to_var(var, disp->mode);
 	var->xres_virtual = disp->xres_virtual;
 	var->yres_virtual = disp->yres_virtual;

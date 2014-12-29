@@ -13,6 +13,10 @@
 #include <linux/seq_file.h>
 #endif
 
+#if defined(RK616_MIPI_DSI)
+#include "../video/rockchip/transmitter/rk616_mipi_dsi.h"
+#endif
+
 #ifndef MHZ
 #define MHZ (1000*1000)
 #endif
@@ -30,11 +34,19 @@ static struct mfd_cell rk616_devs[] = {
 		.name = "rk616-hdmi",
 		.id = 2,
 	},
+	/*
 	{
 		.name = "rk616-mipi",
 		.id = 3,
 	},
+	*/
 };
+
+extern int rk_mipi_dsi_init_lite(void);
+void rk616_mclk_set_rate(struct clk *mclk,unsigned long rate)
+{
+	clk_set_rate(mclk, rate);
+}
 
 static int rk616_i2c_read_reg(struct mfd_rk616 *rk616, u16 reg,u32 *pval)
 {
@@ -430,16 +442,26 @@ static int rk616_core_resume(struct device* dev)
 	rk616_clk_common_init(rk616);
 	return 0;
 }
+extern int rk61x_detect(struct i2c_client *client);
+extern int rk_platform_add_backlight_device(void);
+unsigned env_get_u32(char *name, unsigned value);
 static int rk616_i2c_probe(struct i2c_client *client,const struct i2c_device_id *id)
 {
 	int ret;
 	struct mfd_rk616 *rk616 = NULL;
 	struct clk *iis_clk;
+	struct rk616_platform_data *pdata;
 
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) 
 	{
 		dev_err(&client->dev, "Must have I2C_FUNC_I2C.\n");
 		ret = -ENODEV;
+	}
+	pdata = client->dev.platform_data;
+	if(pdata->power_init)
+		pdata->power_init();
+	if(rk61x_detect(client) < 0) {
+		return -ENODEV;
 	}
 	rk616 = kzalloc(sizeof(struct mfd_rk616), GFP_KERNEL);
 	if (rk616 == NULL)
@@ -449,7 +471,7 @@ static int rk616_i2c_probe(struct i2c_client *client,const struct i2c_device_id 
 	}
 	
 	rk616->dev = &client->dev;
-	rk616->pdata = client->dev.platform_data;
+	rk616->pdata = pdata;
 	rk616->client = client;
 	i2c_set_clientdata(client, rk616);
 	dev_set_drvdata(rk616->dev,rk616);
@@ -476,15 +498,12 @@ static int rk616_i2c_probe(struct i2c_client *client,const struct i2c_device_id 
 		iomux_set(I2S0_CLK);
 		#endif
 		clk_enable(iis_clk);
-		clk_set_rate(iis_clk, 11289600);
+		//clk_set_rate(iis_clk, 11289600);
+		rk616_mclk_set_rate(iis_clk,11289600);
 		//clk_put(iis_clk);
 	}
 
 	mutex_init(&rk616->reg_lock);
-	
-	if(rk616->pdata->power_init)
-		rk616->pdata->power_init();
-	
 	rk616->read_dev = rk616_i2c_read_reg;
 	rk616->write_dev = rk616_i2c_write_reg;
 	rk616->write_dev_bits = rk616_i2c_write_bits;
@@ -499,9 +518,15 @@ static int rk616_i2c_probe(struct i2c_client *client,const struct i2c_device_id 
 		debugfs_create_file("core", S_IRUSR,rk616->debugfs_dir,rk616,&rk616_reg_fops);
 #endif
 	rk616_clk_common_init(rk616);
+#ifdef CONFIG_RK616_MIPI_DSI
+	if(env_get_u32("lcd_out_type", 0) == SCREEN_MIPI) {
+		rk616_devs->name = "rk616-mipi";
+	}
+#endif
 	ret = mfd_add_devices(rk616->dev, -1,
 				      rk616_devs, ARRAY_SIZE(rk616_devs),
 				      NULL, rk616->irq_base);
+	rk_platform_add_backlight_device();
 	dev_info(&client->dev,"rk616 core probe success!\n");
 	return 0;
 }

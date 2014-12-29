@@ -745,133 +745,10 @@ ignore:
 	return;
 
 }
-static int test_x=0,test_y=0;
-
-
-__u16 switch_code_value(__u16 codeValue)
-{
-
-
-
-	__u16  value=0;
-
-	#if 1
-	switch(codeValue)
-	{
-		case 288:
-			value =  KEY_X;			
-			break;
-
-		case 289:		
-			value = KEY_A;
-			break;
-	
-	    case 290:	
-			value = KEY_B;
-			break;
-		case 291:			
-			value = KEY_Y;
-			break;
-
-	 	case 292:
-			value =  KEY_L;
-			break;
-
-		case 293:
-			value = KEY_R;
-			break;
-		case 294:
-			value = KEY_J;
-			break;
-		case 295:
-			value = KEY_K;
-			break;
-			
-		default:
-		
-			break;
-
-	}
-#endif
-//       printk("val=%d\r\n",value);
-	return value;
-
-}
-void gp_vts_shoot(int type, int x, int y, int action);
-extern int SKVmt_enable();
-
-
-static int   joyl_x=128;
-static int   joyl_y=128;
-
-
-static int   joyl_x2=128;
-static int   joyl_y2=128;
-
-
-
-
-#define  M_LEFT  1
-#define  M_RIGHT 2
-#define  M_UP    3
-#define  M_DOWN  4
-
-#define  M_LEFT_UP 5
-#define  M_LEFT_DOWN  6
-#define  M_RIGHT_UP   7
-#define  M_RIGHT_DOWN 8
-
-#define  LEFT_DEF      M_LEFT
-#define  RIGHT_DEF     M_RIGHT
-#define  UP_DEF        M_UP
-#define  DOWN_DEF        M_DOWN
-#define  LEFT_DOWN_DEF    M_LEFT_DOWN 
-#define  LEFT_UP_DEF      M_LEFT_UP
-#define  RIGHT_DOWN_DEF   M_RIGHT_DOWN
-#define  RIGHT_UP_DEF      M_RIGHT_UP
-
-/*
-int adcjoy_pos_arry[3][3]=
-{	
-	  {LEFT_UP_DEF,LEFT_DEF,LEFT_DOWN_DEF}, //Y==0  	  
-		{UP_DEF,0,DOWN_DEF}, //Y==1  
-	  {RIGHT_UP_DEF,RIGHT_DEF,RIGHT_DOWN_DEF} //Y==2  		    
-};*/
-
-int adcjoy_pos_arry[3][3]=
-{	
-	  {RIGHT_UP_DEF,RIGHT_DEF,RIGHT_DOWN_DEF}, //Y==0  	  
-		{UP_DEF,0,DOWN_DEF}, //Y==1  
-	  {LEFT_UP_DEF,LEFT_DEF,LEFT_DOWN_DEF} //Y==2  		    
-};
-
-int adcjoy_pos_arry2[3][3]=
-{	
-	  {LEFT_UP_DEF,UP_DEF,RIGHT_UP_DEF}, //Y==0  	  
-		{LEFT_DEF,0,RIGHT_DEF}, //Y==1  
-	  {LEFT_DOWN_DEF,DOWN_DEF,RIGHT_DOWN_DEF} //Y==2  		    
-};
-
-
-static int joyl_cur_key=0;
-static int joyl_cur_key2=0;
-extern void SKSetRK(int ,int );
-
-
-
-static  int fx_rk_state1=0;
-static  int fx_rk_state2=0;
-
-static int  rk_spee_cnt=0;
-
-void sk_vts_set(int type,int fg_start);
 
 void hidinput_hid_event(struct hid_device *hid, struct hid_field *field, struct hid_usage *usage, __s32 value)
 {
 	struct input_dev *input;
-
-	
-	
 	unsigned *quirks = &hid->quirks;
 
 	if (!field->hidinput)
@@ -882,64 +759,34 @@ void hidinput_hid_event(struct hid_device *hid, struct hid_field *field, struct 
 	if (!usage->type)
 		return;
 
-
-
-	
 	if (usage->hat_min < usage->hat_max || usage->hat_dir) {
-		
-//printk("--skwq11--   usage->hi=%d  usage->type=%d  usage->code=%d     \n ",usage->hid,usage->type,usage->code);
-
-
-			
 		int hat_dir = usage->hat_dir;
 		if (!hat_dir)
 			hat_dir = (value - usage->hat_min) * 8 / (usage->hat_max - usage->hat_min + 1) + 1;
 		if (hat_dir < 0 || hat_dir > 8) hat_dir = 0;
-		//	test_x=(test_x+1)%16;
-			
-   // printk("[%d,%d],  ",hid_hat_to_axis[hat_dir].x,hid_hat_to_axis[hat_dir].y);	
-    
-   // if(test_x==0)
-    //	{
-    //  printk(" \r\n");	
-    // }	
-        	
 		input_event(input, usage->type, usage->code    , hid_hat_to_axis[hat_dir].x);
 		input_event(input, usage->type, usage->code + 1, hid_hat_to_axis[hat_dir].y);
 		return;
 	}
 
 	if (usage->hid == (HID_UP_DIGITIZER | 0x003c)) { /* Invert */
-
-
-		//printk("--skwq--      -------usage->hid===========    \n  ");
-
 		*quirks = value ? (*quirks | HID_QUIRK_INVERT) : (*quirks & ~HID_QUIRK_INVERT);
 		return;
 	}
 
 	if (usage->hid == (HID_UP_DIGITIZER | 0x0032)) { /* InRange */
 		if (value) {
-
-		//	printk("--skwq--      -------===========    \n  ");
-
 			input_event(input, usage->type, (*quirks & HID_QUIRK_INVERT) ? BTN_TOOL_RUBBER : usage->code, 1);
 			return;
 		}
-					printk("--skwq--      -------usage->code=%d===========    \n  ",usage->code);
-
 		input_event(input, usage->type, usage->code, 0);
 		input_event(input, usage->type, BTN_TOOL_RUBBER, 0);
 		return;
 	}
 
 	if (usage->hid == (HID_UP_DIGITIZER | 0x0030) && (*quirks & HID_QUIRK_NOTOUCH)) { /* Pressure */
-
 		int a = field->logical_minimum;
 		int b = field->logical_maximum;
-
-		printk("--skwq--       value > a + ((b - a) >> 3 =%d    \n  ",value > a + ((b - a) >> 3));
-
 		input_event(input, EV_KEY, BTN_TOUCH, value > a + ((b - a) >> 3));
 	}
 
@@ -954,18 +801,10 @@ void hidinput_hid_event(struct hid_device *hid, struct hid_field *field, struct 
 	}
 
 	if ((usage->type == EV_KEY) && (usage->code == 0)) /* Key 0 is "unassigned", not KEY_UNKNOWN */
-	{
-		//printk("--skwq11--   usage->hi=%d  usage->type=%d  usage->code=%d     \n ",usage->hid,usage->type,usage->code);
-
 		return;
-
-	}
 
 	if ((usage->type == EV_ABS) && (field->flags & HID_MAIN_ITEM_RELATIVE) &&
 			(usage->code == ABS_VOLUME)) {
-
-		//printk("--skwq22--   usage->hi=%d  usage->type=%d  usage->code=%d     \n ",usage->hid,usage->type,usage->code);
-		
 		int count = abs(value);
 		int direction = value > 0 ? KEY_VOLUMEUP : KEY_VOLUMEDOWN;
 		int i;
@@ -980,148 +819,13 @@ void hidinput_hid_event(struct hid_device *hid, struct hid_field *field, struct 
 	}
 
 	/* report the usage code as scancode if the key status has changed */
-   int key_val;
-	
 	if (usage->type == EV_KEY && !!test_bit(usage->code, input->key) != value)
-	{
-
-
-	
-//printk("--skwq333 value = %d  usage->code=%d input->key=%d usage->hid=%d   \n ",value,usage->code,input->key,usage->hid);
-//printk("--skwq@@ usage->type =%d  value = %d  usage->code=%d input->key=%d usage->hid=%d    \r\n",usage->type,value,usage->code,input->key,usage->hid);
-	
-
-#ifdef  CONFIG_MACH_RK3188_SKQ627
-
-            key_val=usage->code;
-					  key_val=switch_code_value(key_val);
-
-  			    gp_vts_shoot(1, key_val, 0, value);
-						sk_vts_set(1,0);
-                      
-				   
-	#endif		   
-			
-
-
-
-
-		
 		input_event(input, EV_MSC, MSC_SCAN, usage->hid);
 
-	}
-
-   
-	
-	//test_y=(test_y+1)%32;
-	//	printk("value =%d ,x=%d,y=%d \r\n",value,(value<<7),((value>>1)&0xff));	
- // printk("[%d, %d ,%d], ",usage->type,usage->code,value);
-    
- //  if(test_y==0)
- //   {
-  
- // printk("\r\n");
-      	
- // }	
-	
-	
 	input_event(input, usage->type, usage->code, value);
 
-#ifdef CONFIG_MACH_RK3188_SKQ627
-
-
-	 	    if(((value<=512&&value>=0)||(value>=-512&&value<=0)))
-	 	    	{
-		 	     if((usage->code<=5)&&(usage->code!=2))
-		 	     	{
-
-
-	
-					
-                            int result,currx,curry;
-						//	int hat_dir = usage->hat_dir;
-                                      if(usage->code==0)
-                                      	{
-
-						
-                                      	        joyl_x=value;
-                                      	}else      if(usage->code==1)
-                                      		{
-                                      	
-                                      		  joyl_y=value;
-                                      		} else           if(usage->code==3)
-                                      	{
-
-						
-                                      	        joyl_x2=value;
-                                      	}else      if(usage->code==5)
-                                      		{
-                                      	
-                                      		  joyl_y2=value;
-                                      		}
-
-					
-
-   result = joyl_x;
-     
-      currx=result>>7;
-	   if((result%128)>=64) currx++;            
-	    result = joyl_y;
-	    
-	 
-		  curry=result>>7;
-		  if((result%128)>=64) curry++;
-  
-	 joyl_cur_key=adcjoy_pos_arry[curry][currx];    
-
-
-	   result = joyl_x2;
-     
-      currx=result>>7;
-	   if((result%128)>=64) currx++;            
-	    result = joyl_y2;
-	    
-	 
-		  curry=result>>7;
-		  if((result%128)>=64) curry++;
-  
-	 joyl_cur_key2=adcjoy_pos_arry2[curry][currx];    
-
-	 
-//	 if(joyl_cur_key)
-      //if(joyl_cur_key||joyl_cur_key2)
-      //	{
-	// printk("keyL=%d,KeyR=%d\r\n",joyl_cur_key,joyl_cur_key2);
-     // 	}
-	//  
-
-
-      	       if((joyl_cur_key==fx_rk_state1)&&(fx_rk_state2==joyl_cur_key2))
-      	       	{
-
-				  rk_spee_cnt=(rk_spee_cnt+1)%5;
-				  if(!rk_spee_cnt)
-				  	{
-      	       	                   SKSetRK(0xff,joyl_cur_key2);
-				  	}
-      	       	}else{
-      	       	// printk("keyL=%d,KeyR=%d\r\n",joyl_cur_key,joyl_cur_key2);
-	                   SKSetRK(joyl_cur_key,joyl_cur_key2);
-                      	}
-	fx_rk_state1=joyl_cur_key;
-		fx_rk_state2=joyl_cur_key2;
-		// 		printk("code=%d, dir=%d,val33=%d ,x=%d,y=%d\r\n",usage->code,hat_dir,value,hid_hat_to_axis[hat_dir].x,hid_hat_to_axis[hat_dir].y);
-		 	     	}
-	 	    	}
-     	
-#endif
-
 	if ((field->flags & HID_MAIN_ITEM_RELATIVE) && (usage->type == EV_KEY))
-		{
-		//	printk("--skwq44444444444444  \n ");
-
 		input_event(input, usage->type, usage->code, 0);
-		}
 }
 
 void hidinput_report_event(struct hid_device *hid, struct hid_report *report)

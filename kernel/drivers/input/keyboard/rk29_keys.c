@@ -7,7 +7,7 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
- 
+
 #include <linux/module.h>
 
 #include <linux/init.h>
@@ -28,40 +28,16 @@
 #include <plat/key.h>
 
 #define EMPTY_ADVALUE					950
-#define DRIFT_ADVALUE					35//70
+#define DRIFT_ADVALUE					50
 #define INVALID_ADVALUE 				-1
 #define EV_MENU					KEY_F1
 
-void SKSetRK(int direct_skrock,int direct_skrock2);
+
 #if 0
 #define key_dbg(bdata, format, arg...)		\
 	dev_printk(KERN_INFO , &bdata->input->dev , format , ## arg)
 #else
 #define key_dbg(bdata, format, arg...)	
-#endif
-
-
-#define  SK_ROCK1   RK30_PIN3_PB1
-#define  SK_ROCK2   RK30_PIN0_PC0
-#define  SK_ROCK3   RK30_PIN0_PC1
-#define  SK_ROCK4   RK30_PIN0_PC2
-#define SYSCONFIG_VIRTUAL_TOUCH_KEY
-
-
-
-#ifdef SYSCONFIG_VIRTUAL_TOUCH_KEY
-void gp_vts_shoot(int type, int x, int y, int action);
-void gp_vts_report(void);
-void sk_vts_report(void);
-
-
-
-
-
-void sk_vts_set(int type,int fg_start);
-extern int SKVmt_enable(void);
-//extern void SKSetRK(int cur_mod);
-//extern void SKSetRK2(int);
 #endif
 
 struct rk29_button_data {
@@ -96,19 +72,16 @@ static ssize_t rk29key_set(struct device *dev,
 	char rk29keyArrary[400];
 	struct rk29_keys_Arrary Arrary[]={
                 {
-					     .keyArrary = {"home"},
-                      
+                        .keyArrary = {"menu"},
                 },
                 {
-                     .keyArrary = {"menu"},
-                        //.keyArrary = {"f1"},
+                        .keyArrary = {"home"},
                 },
                 {
                         .keyArrary = {"esc"},
                 },
                 {
-                      //  .keyArrary = {"sensor"},
-                       .keyArrary = {"f1"},
+                        .keyArrary = {"sensor"},
                 },
                 {
                         .keyArrary = {"play"},
@@ -119,30 +92,10 @@ static ssize_t rk29key_set(struct device *dev,
                 {
                         .keyArrary = {"vol-"},
                 },
-                {
-                        .keyArrary = {"select"},
-                },
-                {
-                        .keyArrary = {"start"},
-                },
-                {
-                        .keyArrary = {"a"},
-                },
-                {
-                        .keyArrary = {"b"},
-                },
-                {
-                        .keyArrary = {"x"},
-                },
-                {
-                        .keyArrary = {"y"},
-                },
-
-
         }; 
 	char *p;
 	  
-	for(i=0;i<9+4;i++)
+	for(i=0;i<7;i++)
 	{
 		
 		p = strstr(buf,Arrary[i].keyArrary);
@@ -153,7 +106,7 @@ static ssize_t rk29key_set(struct device *dev,
               }
 		start = strcspn(p,":");
 		
-		if(i<8+4)
+		if(i<6)
 			end = strcspn(p,",");
 		else
 			end = strcspn(p,"}");
@@ -162,45 +115,24 @@ static ssize_t rk29key_set(struct device *dev,
 		
 		strncpy(rk29keyArrary,p+start+1,end-start-1);
 							 		
-		for(j=0;j<9+4;j++)
+		for(j=0;j<7;j++)
 		{		
 			if(strcmp(pdata->buttons[j].desc,Arrary[i].keyArrary)==0)
 			{
-
-			if(strcmp(rk29keyArrary,"HOME")==0)
-					pdata->buttons[j].code = KEY_HOME;
-				else if(strcmp(rk29keyArrary,"MENU")==0)
+				if(strcmp(rk29keyArrary,"MENU")==0)
 					pdata->buttons[j].code = EV_MENU;
-			
+				else if(strcmp(rk29keyArrary,"HOME")==0)
+					pdata->buttons[j].code = KEY_HOME;
 				else if(strcmp(rk29keyArrary,"ESC")==0)
 					pdata->buttons[j].code = KEY_BACK;
-				//else if(strcmp(rk29keyArrary,"sensor")==0)
-					//pdata->buttons[j].code = KEY_CAMERA;
-					else if(strcmp(rk29keyArrary,"F1")==0)
-					pdata->buttons[j].code = KEY_F1;
+				else if(strcmp(rk29keyArrary,"sensor")==0)
+					pdata->buttons[j].code = KEY_CAMERA;
 				else if(strcmp(rk29keyArrary,"PLAY")==0)
 					pdata->buttons[j].code = KEY_POWER;
 				else if(strcmp(rk29keyArrary,"VOLUP")==0)
 					pdata->buttons[j].code = KEY_VOLUMEUP;
 				else if(strcmp(rk29keyArrary,"VOLDOWN")==0)
 					pdata->buttons[j].code = KEY_VOLUMEDOWN;
-				else if(strcmp(rk29keyArrary,"SELECT")==0)
-					pdata->buttons[j].code = KEY_S;
-				else if(strcmp(rk29keyArrary,"START")==0)
-					pdata->buttons[j].code = KEY_ENTER;
-
-				else if(strcmp(rk29keyArrary,"A")==0)
-					pdata->buttons[j].code = KEY_A;
-				else if(strcmp(rk29keyArrary,"B")==0)
-					pdata->buttons[j].code = KEY_B;
-				else if(strcmp(rk29keyArrary,"X")==0)
-					pdata->buttons[j].code = KEY_X;
-				else if(strcmp(rk29keyArrary,"Y")==0)
-					pdata->buttons[j].code = KEY_Y;
-				//else if(strcmp(rk29keyArrary,"HOME")==0)
-					//pdata->buttons[j].code = KEY_HOME;
-					//else if(strcmp(rk29keyArrary,"F1")==0)
-					//pdata->buttons[j].code = KEY_F1;
 				else
 				     continue;
 		 	}
@@ -209,7 +141,7 @@ static ssize_t rk29key_set(struct device *dev,
 			
    	}
 
-	for(i=0;i<9+4;i++)
+	for(i=0;i<7;i++)
 		dev_dbg(dev, "desc=%s, code=%d\n",pdata->buttons[i].desc,pdata->buttons[i].code);
 	return 0; 
 
@@ -255,21 +187,15 @@ static void keys_long_press_timer(unsigned long _data)
 		state = !!((gpio_get_value(button->gpio) ? 1 : 0) ^ button->active_low);
 	else
 		state = !!button->adc_state;
-
-	//printk("wq  ------    state =%d       \n",state);
 	if(state) {
 		if(bdata->long_press_count != 0) {
 			if(bdata->long_press_count % (LONG_PRESS_COUNT+ONE_SEC_COUNT) == 0){
-
-				//printk("wq  ------0000000000000    \n");
 				key_dbg(bdata, "%skey[%s]: report ev[%d] state[0]\n", 
 					(button->gpio == INVALID_GPIO)?"ad":"io", button->desc, button->code_long_press);
 				input_event(input, type, button->code_long_press, 0);
 				input_sync(input);
 			}
 			else if(bdata->long_press_count%LONG_PRESS_COUNT == 0) {
-
-				//printk("wq  ------1111111111111111    \n");
 				key_dbg(bdata, "%skey[%s]: report ev[%d] state[1]\n", 
 					(button->gpio == INVALID_GPIO)?"ad":"io", button->desc, button->code_long_press);
 				input_event(input, type, button->code_long_press, 1);
@@ -283,7 +209,6 @@ static void keys_long_press_timer(unsigned long _data)
 	else {
 		if(bdata->long_press_count <= LONG_PRESS_COUNT) {
 			bdata->long_press_count = 0;
-			//printk("wq  ------22222222222222    \n");
 			key_dbg(bdata, "%skey[%s]: report ev[%d] state[1], report ev[%d] state[0]\n", 
 					(button->gpio == INVALID_GPIO)?"ad":"io", button->desc, button->code, button->code);
 			input_event(input, type, button->code, 1);
@@ -292,7 +217,6 @@ static void keys_long_press_timer(unsigned long _data)
 			input_sync(input);
 		}
 		else if(bdata->state != state) {
-			//printk("wq  ------333333333333333    \n");
 			key_dbg(bdata, "%skey[%s]: report ev[%d] state[0]\n", 
 			(button->gpio == INVALID_GPIO)?"ad":"io", button->desc, button->code_long_press);
 			input_event(input, type, button->code_long_press, 0);
@@ -301,10 +225,6 @@ static void keys_long_press_timer(unsigned long _data)
 	}
 	bdata->state = state;
 }
-
-//int skrockr_fg = 0;
-extern int get_joy_view_mode();
-
 static void keys_timer(unsigned long _data)
 {
 	int state;
@@ -312,58 +232,22 @@ static void keys_timer(unsigned long _data)
 	struct rk29_keys_button *button = bdata->button;
 	struct input_dev *input = bdata->input;
 	unsigned int type = EV_KEY;
-	//printk("wq  ------keys_timer    \n");
-
-
-	//	state = gpio_get_value(button->gpio);//!!((gpio_get_value(button->gpio) ? 1 : 0) ^ button->active_low);
-
-	//	printk("ss       state  =%d    \n",state);
-
-		
+	
 	if(button->gpio != INVALID_GPIO)
-	{
-
-	
 		state = !!((gpio_get_value(button->gpio) ? 1 : 0) ^ button->active_low);
-//
-	//	printk("ss       state  =%d    \n",state);
-	}
-	
 	else
 		state = !!button->adc_state;
-
-	
 	if(bdata->state != state) {
 		bdata->state = state;
-	//printk("wq  --123124--state  ----   =%d      \n",state);
-
-		//SKSetRK2(state);
-		//skrockr_fg = state;
 		key_dbg(bdata, "%skey[%s]: report ev[%d] state[%d]\n", 
 			(button->gpio == INVALID_GPIO)?"ad":"io", button->desc, button->code, bdata->state);
-
-		//printk("button->code[%d] \n", button->code);
-
-			if(((button->code==30)||(button->code==48)||(button->code==45)||(button->code==21))&&get_joy_view_mode())
-			{
-
-			}else
-				{
-
-				input_event(input, type, button->code, bdata->state);
-				input_sync(input);
-				}
-			
+		input_event(input, type, button->code, bdata->state);
+		input_sync(input);
 	}
-
-	
 	if(state)
 		mod_timer(&bdata->timer,
 			jiffies + msecs_to_jiffies(DEFAULT_DEBOUNCE_INTERVAL));
-
-	
 }
-
 
 static irqreturn_t keys_isr(int irq, void *dev_id)
 {
@@ -373,224 +257,46 @@ static irqreturn_t keys_isr(int irq, void *dev_id)
 	unsigned int type = EV_KEY;
 	BUG_ON(irq != gpio_to_irq(button->gpio));
 
-
-//	printk("wq   keys -isr  button->wakeup =%d, bdata->ddata->in_suspend =%s \n ",button->wakeup,bdata->ddata->in_suspend);
-
-	#if 1
-
-	
-        if(button->wakeup == 1&& bdata->ddata->in_suspend == true){
-
-		//printk("  ---------------------------------xxxx-----------------  \n");
-		
+        if(button->wakeup == 1 && bdata->ddata->in_suspend == true){
+		bdata->state = 1;
 		key_dbg(bdata, "wakeup: %skey[%s]: report ev[%d] state[%d]\n", 
 			(button->gpio == INVALID_GPIO)?"ad":"io", button->desc, button->code, bdata->state);
-
-
-
-			
-			
-					input_event(input, type, button->code, 1);
-					input_sync(input);
-
-					input_event(input, type, button->code, 0);
-					input_sync(input);
-			
-
-
-			return IRQ_HANDLED;
+		input_event(input, type, button->code, bdata->state);
+		input_sync(input);
         }
-
-
-	
 	bdata->long_press_count = 0;
 	mod_timer(&bdata->timer,
 				jiffies + msecs_to_jiffies(DEFAULT_DEBOUNCE_INTERVAL));
-
-		#endif
-	
 	return IRQ_HANDLED;
 }
 
-
-
-static unsigned int  ADC_KEY_STATUS=0;
-//static unsigned int  tmp_skrock = 0;
- static unsigned int direct_skrock=0;
-
-
-
-#define     	direct_left          (0x01<<9)
-#define		direct_down 	(0x01<<10)
-#define     	direct_right         (0x01<<11)
-#define		direct_up		(0x01<<12)
-
-#define     	direct_leftup        ((0x01<<9)|(0x01<<10))
-#define		 direct_leftdown    	 ((0x01<<9)|(0x01<<12))
-#define		  direct_rightup   	 ((0x01<<11)|(0x01<<10))
-#define		direct_rightdown 	 ((0x01<<11)|(0x01<<12))
-
-
-static unsigned int tmp_skrock=0;
-
 static void keys_adc_callback(struct adc_client *client, void *client_param, int result)
 {
-
-
-
-	//printk("wq  -------  keys_adc_callback       \n");
 	struct rk29_keys_drvdata *ddata = (struct rk29_keys_drvdata *)client_param;
 	int i;
-	unsigned int type = EV_KEY;
-	unsigned shift_bit=0;
-	
-	#if 0//def SYSCONFIG_VIRTUAL_TOUCH_KEY
-	mode_vt_rk=0;
-	
-	#endif
-				  
-	 
+	int next_time = ADC_SAMPLE_TIME;
 	if(result > INVALID_ADVALUE && result < EMPTY_ADVALUE)
 		ddata->result = result;
-
-		struct rk29_button_data *bdata ;
-		struct rk29_keys_button *button;
-	
-tmp_skrock=0;
-		
 	for (i = 0; i < ddata->nbuttons; i++) {
-	        bdata = &ddata->data[i];
-		 button = bdata->button;
-
-				//printk("  wq     (button->gpio)  =  %d    \n ",gpio_get_value(button->gpio));
-							
-				
-				//if(gpio_get_value(button->gpio)==1)
-
-			
-		 			//shift_bit=(0x01<<i); 
-					
-					  // printk("\n dn shift_bit  %d = %d \n",i,shift_bit);
-
-					//	#ifdef SYSCONFIG_VIRTUAL_TOUCH_KEY   
-								
-					//	SKSetRK(mode_vt_rk);
-							
-								
-					//	#endif        
-
-
-				
-#if		   (defined(CONFIG_MACH_RK3188_SKQ621)||defined(CONFIG_MACH_RK3188_SKQ028)||defined(CONFIG_MACH_RK3188_SKQ026))
-			
-				if(i>=8)
-
-				{
-			//printk("\n dn     i  =  %d = %d \n",i,gpio_get_value(button->gpio));
-				                   		//shift_bit=(0x01<<i);
-						               if(gpio_get_value(button->gpio)==0)
-						               {								
-									
-							       	tmp_skrock |= (0x01<<i);
-									//printk("\n dn     i  =  %d = %x \n",i,tmp_skrock);
-								 						              
-						               }
-
-				}
-//	printk("\n tmp_skrock11= %d \n",tmp_skrock);
-			   
-			
-
-
-                	//printk("right direct_skrock  = %d      \n", direct_skrock);
-
-					
-              		
-			
-#endif
-		
+		struct rk29_button_data *bdata = &ddata->data[i];
+		struct rk29_keys_button *button = bdata->button;
 		if(!button->adc_value)
 			continue;
-
-		//printk("wq  --- button->adc_value  = %d      \n", button->adc_value);
-
-		
 		if(result < button->adc_value + DRIFT_ADVALUE &&
-			result > button->adc_value - DRIFT_ADVALUE)
-			{
-			//printk("wq 00 --- button->adc    \n");
+			result > button->adc_value - DRIFT_ADVALUE) {
+			if (++button->adc_debounce > 1)
 				button->adc_state = 1;
-			}
-		else
-			{
-				//printk("wq 11 --- button->adc     \n", button->gpio);
-				button->adc_state = 0;
-			}
-				
-		
-			//xxx = gpio_get_value(button->gpio);
-
-			//printk("wq 00 --- button   xxx   = %d      \n", xxx);
-			
-		/*	if(!gpio_get_value(button->gpio))
-			{
-			printk("wq 00 --- button->gpio  = %d      \n", button->gpio);
-				button->adc_state = 1;
-			}
-				else
-			{
-			printk("wq  11--- button->gpio  = %d      \n", button->gpio);
-				button->adc_state = 0;
-			}*/
-
-		//printk("wq  -------  button->adc_state  =%d          \n",button->adc_state);
-
-		
-			if(bdata->state != button->adc_state)
+			else
+				next_time = 10;
+		} else {
+			button->adc_state = 0;
+			button->adc_debounce = 0;
+		}
+		if(bdata->state != button->adc_state)
 			mod_timer(&bdata->timer,
 				jiffies + msecs_to_jiffies(DEFAULT_DEBOUNCE_INTERVAL));
-		
-
 	}
-
-				#ifndef  CONFIG_MACH_RK3188_SKQ627
-
-			       	      if(direct_left == tmp_skrock)
-			       		{
-							direct_skrock = 1;
-						}else if(direct_right== tmp_skrock)
-			       		{
-							direct_skrock = 2;
-						}else if(direct_up == tmp_skrock)
-			       		{
-							direct_skrock = 3;
-						}else if(direct_down== tmp_skrock)
-			       		{
-							direct_skrock = 4;
-						}else if(direct_leftdown== tmp_skrock)
-			       		{
-							direct_skrock = 5;
-						}else if(direct_leftup == tmp_skrock)
-			       		{
-							direct_skrock = 6;
-						}else if(direct_rightdown== tmp_skrock)
-			       		{
-							direct_skrock = 7;
-						}else if(direct_rightup== tmp_skrock)
-			       		{
-							direct_skrock = 8;
-						}else
-							{
-							direct_skrock = 0;
-						}
-			    
-		
-	//printk("\n direct_skrock= %x \n",direct_skrock);
-
-	         SKSetRK(0xff,direct_skrock);		
-
-			#endif
-	
+	mod_timer(&ddata->timer, jiffies + msecs_to_jiffies(next_time));
 	return;
 }
 
@@ -600,17 +306,13 @@ static void keys_adc_timer(unsigned long _data)
 
 	if (!ddata->in_suspend)
 		adc_async_read(ddata->client);
-
-	//printk(" sk--- adc_timer    -----=--------ddata->result.result=%d--------------\n",ddata->result);
-	mod_timer(&ddata->timer, jiffies + msecs_to_jiffies(ADC_SAMPLE_TIME));
+	else
+		mod_timer(&ddata->timer, jiffies + msecs_to_jiffies(ADC_SAMPLE_TIME));
 }
 
 static ssize_t adc_value_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	struct rk29_keys_drvdata *ddata = dev_get_drvdata(dev);
-
-
-	//printk(" #########33   sk--- adc_value_show      : %d\n", ddata->result);
 	
 	return sprintf(buf, "adc_value: %d\n", ddata->result);
 }
@@ -686,7 +388,6 @@ static int __devinit keys_probe(struct platform_device *pdev)
 		mod_timer(&ddata->timer, jiffies + msecs_to_jiffies(100));
 	}
 
-
 	for (i = 0; i < pdata->nbuttons; i++) {
 		struct rk29_keys_button *button = &pdata->buttons[i];
 		struct rk29_button_data *bdata = &ddata->data[i];
@@ -699,10 +400,8 @@ static int __devinit keys_probe(struct platform_device *pdev)
 					" error %d\n", button->gpio, error);
 				goto fail2;
 			}
-		
+
 			error = gpio_direction_input(button->gpio);
-			gpio_pull_updown(button->gpio,1);
-			
 			if (error < 0) {
 				pr_err("gpio-keys: failed to configure input"
 					" direction for GPIO %d, error %d\n",
@@ -710,7 +409,7 @@ static int __devinit keys_probe(struct platform_device *pdev)
 				gpio_free(button->gpio);
 				goto fail2;
 			}
-			
+
 			irq = gpio_to_irq(button->gpio);
 			if (irq < 0) {
 				error = irq;
@@ -725,8 +424,6 @@ static int __devinit keys_probe(struct platform_device *pdev)
 					    (button->active_low)?IRQF_TRIGGER_FALLING : IRQF_TRIGGER_RISING,
 					    button->desc ? button->desc : "keys",
 					    bdata);
-
-			
 			if (error) {
 				pr_err("gpio-keys: Unable to claim irq %d; error %d\n",
 					irq, error);
@@ -884,4 +581,3 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Phil Blundell <pb@handhelds.org>");
 MODULE_DESCRIPTION("Keyboard driver for CPU GPIOs");
 MODULE_ALIAS("platform:gpio-keys");
-

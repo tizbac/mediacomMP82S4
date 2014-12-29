@@ -6,20 +6,41 @@
 #include <mach/gpio.h>
 #include <mach/iomux.h>
 #include <mach/board.h>
+#include <mach/yfmach.h>
 
 #ifdef CONFIG_REGULATOR_ACT8846
+
+static struct act8846 * s_act8846;
+u8 act8846_reg_read(struct act8846 *act8846, u8 reg);
+int act8846_reg_write(struct act8846 *act8846, u8 reg, u8 val);
+static int act8846_data_read(u8 index)
+{
+	if(s_act8846 == 0) return -ENODEV;
+	if(index >= 2) return -EINVAL;
+	return act8846_reg_read(s_act8846, index + 0xE3);
+}
+
+static int act8846_data_write(u8 index, u8 value)
+{
+	if(s_act8846 == 0) return -ENODEV;
+	if(index >= 2) return -EINVAL;
+	return act8846_reg_write(s_act8846, index + 0xE3, value);
+}
 
 static int act8846_set_init(struct act8846 *act8846)
 {
 	struct regulator *dcdc;
 	struct regulator *ldo;
 	int i = 0;
+	char * found;
+	const char * disabled = env_get_str("power_disabled_reg", "act_ldo8,act_ldo3,");
 	printk("%s,line=%d\n", __func__,__LINE__);
 
 	#ifndef CONFIG_RK_CONFIG
 	g_pmic_type = PMIC_TYPE_ACT8846;
 	#endif
 	printk("%s:g_pmic_type=%d\n",__func__,g_pmic_type);
+	s_act8846 = act8846;
 	
 	for(i = 0; i < ARRAY_SIZE(act8846_dcdc_info); i++)
 	{
@@ -27,6 +48,8 @@ static int act8846_set_init(struct act8846 *act8846)
                 if(act8846_dcdc_info[i].min_uv == 0 && act8846_dcdc_info[i].max_uv == 0)
                         continue;
 	        dcdc =regulator_get(NULL, act8846_dcdc_info[i].name);
+	        //avoid voltage drop too quickly
+	        if(act8846_dcdc_info[i].min_uv > regulator_get_voltage(dcdc))
 	        regulator_set_voltage(dcdc, act8846_dcdc_info[i].min_uv, act8846_dcdc_info[i].max_uv);
 		 regulator_set_suspend_voltage(dcdc, act8846_dcdc_info[i].suspend_vol);
 	        regulator_enable(dcdc);
@@ -43,6 +66,10 @@ static int act8846_set_init(struct act8846 *act8846)
 	        regulator_set_voltage(ldo, act8846_ldo_info[i].min_uv, act8846_ldo_info[i].max_uv);
 	        regulator_enable(ldo);
 	        printk("%s  %s =%dmV end\n", __func__,act8846_ldo_info[i].name, regulator_get_voltage(ldo));
+		found = strstr(disabled, act8846_ldo_info[i].name);
+		if(found && found[strlen(act8846_ldo_info[i].name)] == ',') {
+			regulator_disable(ldo);
+		}
 	        regulator_put(ldo);
 	}
 
@@ -460,12 +487,15 @@ void act8846_device_suspend(void)
 	vdd_core_vol = regulator_get_voltage(dcdc);
 	regulator_set_voltage(dcdc, 900000, 900000);
 	udelay(100);
-
+/*
 	dcdc =regulator_get(NULL, "act_dcdc4");
 	regulator_set_voltage(dcdc, 2800000, 2800000);
 	regulator_put(dcdc);
 	udelay(100);
-
+*/
+	dcdc =regulator_get(NULL, "act_ldo5");
+	regulator_force_disable(dcdc);
+	regulator_put(dcdc);
 	#endif
 }
 
@@ -474,6 +504,10 @@ void act8846_device_resume(void)
 	struct regulator *dcdc;
 	#ifdef CONFIG_ACT8846_SUPPORT_RESET
 
+	dcdc =regulator_get(NULL, "act_ldo5");
+	regulator_enable(dcdc);
+	regulator_put(dcdc);
+
 	dcdc =dvfs_get_regulator( "vdd_cpu");
 	regulator_set_voltage(dcdc, vdd_cpu_vol, vdd_cpu_vol);
 	udelay(100);
@@ -481,12 +515,12 @@ void act8846_device_resume(void)
 	dcdc =dvfs_get_regulator( "vdd_core");
 	regulator_set_voltage(dcdc, vdd_core_vol, vdd_core_vol);
 	udelay(100);
-
+/*
 	dcdc =regulator_get(NULL, "act_dcdc4");
 	regulator_set_voltage(dcdc, 3000000, 3000000);
 	regulator_put(dcdc);
 	udelay(100);
-	
+*/
 	sram_gpio_set_value(pmic_vsel, GPIO_HIGH);  
 	
 	#endif
@@ -503,28 +537,36 @@ void act8846_device_resume(void)
 
 void __sramfunc board_pmu_act8846_suspend(void)
 {	
-	#if 1//def CONFIG_CLK_SWITCH_TO_32K
+	#ifdef CONFIG_CLK_SWITCH_TO_32K
+	#if !(defined(CONFIG_ARCH_RK3066B))
 	 sram_gpio_set_value(pmic_sleep, GPIO_HIGH);  
+	#endif
 	#endif
 }
 void __sramfunc board_pmu_act8846_resume(void)
 {
-	#if 1//def CONFIG_CLK_SWITCH_TO_32K
+	#ifdef CONFIG_CLK_SWITCH_TO_32K
+	#if !(defined(CONFIG_ARCH_RK3066B))
  	sram_gpio_set_value(pmic_sleep, GPIO_LOW);  
 	sram_32k_udelay(10000);
+	#endif
 	#endif
 }
 void __sramfunc board_act8846_set_suspend_vol(void)
 {	
 #ifdef CONFIG_ACT8846_SUPPORT_RESET
-	sram_gpio_set_value(pmic_vsel, GPIO_HIGH); 
+	if(pmic_is_act8846()) {
+		sram_gpio_set_value(pmic_vsel, GPIO_HIGH);
+	}
 #endif
 }
 void __sramfunc board_act8846_set_resume_vol(void)
 {
 #ifdef CONFIG_ACT8846_SUPPORT_RESET
-	sram_gpio_set_value(pmic_vsel, GPIO_LOW);  
-	sram_32k_udelay(1000);
+	if(pmic_is_act8846()) {
+		sram_gpio_set_value(pmic_vsel, GPIO_LOW);
+		sram_32k_udelay(1000);
+	}
 #endif
 }
 

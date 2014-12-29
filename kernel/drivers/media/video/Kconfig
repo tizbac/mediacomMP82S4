@@ -1206,6 +1206,12 @@ config SOC_CAMERA_MV9335
 
 source "drivers/media/video/mv9335/Kconfig"	
 
+config SOC_CAMERA_SP0718
+	tristate "SP0718 support for rockchip"
+	depends on SOC_CAMERA && I2C
+	help
+	  This is a SP0718 camera driver for rockchip
+
 config VIDEO_RK29
 	tristate "RKXX Camera Sensor Interface driver"
 	depends on VIDEO_DEV && PLAT_RK && SOC_CAMERA && HAS_DMA

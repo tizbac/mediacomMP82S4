@@ -47,7 +47,6 @@
 #include <linux/mfd/tps65910.h>
 #include <linux/regulator/act8846.h>
 #include <linux/regulator/rk29-pwm-regulator.h>
-#include <plat/efuse.h>
 #if defined(CONFIG_CT36X_TS)
 #include <linux/ct36x.h>
 #endif
@@ -76,19 +75,6 @@
 #include "../mach-rk30/board-rk3168-ds1006h-camera.c"
 #include <plat/key.h>
 
-
-#ifdef CONFIG_RK_REMOTECTL
-#include <mach/remotectl.h>
-#endif
-
-#if defined(CONFIG_MFD_RK616)
-#include <linux/mfd/rk616.h>
-#endif
-
-
-
-#if 1
-
 static struct rk29_keys_button key_button[] = {
 	{
 		.desc	= "play",
@@ -98,246 +84,19 @@ static struct rk29_keys_button key_button[] = {
 		.wakeup	= 1,
 	},
 	{
-		.desc	= "f1",
-		.code	= KEY_F1,
-		.adc_value	= 133,
-		.gpio = INVALID_GPIO,
-		.active_low = PRESS_LEV_LOW,
-	},
-#ifdef CONFIG_TOUCHSCREEN_TP_YLP_7inch
-	{
-		.desc	= "menu",//"F1",
-		.code	=  KEY_MENU,//KEY_F1, //KEY_HOME,//KEY_VOLUMEUP,
-		.gpio = INVALID_GPIO,
-		.adc_value	= 1,
-		.active_low = PRESS_LEV_LOW,
-	},
-#else
-	{
-		.desc	= "home",//"F1",
-		.code	=  KEY_HOME,//KEY_F1, //KEY_HOME,//KEY_VOLUMEUP,
-		.gpio = INVALID_GPIO,
-		.adc_value	= 1,
-		.active_low = PRESS_LEV_LOW,
-	},
-#endif
-	{
-		.desc	= "back",
+		.desc	= "esc",
 		.code	= KEY_BACK,
-		.gpio = INVALID_GPIO,
-		.adc_value	= 768,//682,
-		.active_low = PRESS_LEV_LOW,
-	},
-
-	{
-		.desc	= "select",
-		.code	= KEY_S,
-		.gpio = INVALID_GPIO,
-		.adc_value	= 329,
-		.active_low = PRESS_LEV_LOW,
-	},
-		
-	{
-		.desc	= "start",
-		.code	= KEY_ENTER,
-		.gpio = INVALID_GPIO,
-		.adc_value	= 185,//937,
-		.active_low = PRESS_LEV_LOW,
-	},
-	
-	{
-		.desc	= "menu",
-		.code	= KEY_MENU,
-		.gpio = INVALID_GPIO,
-		.adc_value	= 684,//767,
-		.active_low = PRESS_LEV_LOW,
-	}, 
-
-
-	{
-		.desc	= "vol-",
-		.code	= KEY_VOLUMEDOWN,  //KEY_VOLUMEDOWN,
-		.gpio = INVALID_GPIO,
-		.adc_value	= 511,//170,
-		.active_low = PRESS_LEV_LOW,
-	},
-
-	{
-		.desc	= "vol+",
-		.code	= KEY_VOLUMEUP,
-		.gpio = INVALID_GPIO,
-		.adc_value	= 843,////767,
-		.active_low = PRESS_LEV_LOW,
-	},
-
-	{
-		.desc	= "y",
-		.code	= KEY_Y,
-		.gpio = RK30_PIN1_PB5,
-		.active_low = PRESS_LEV_LOW,
-		  .wakeup = 1,
-		
-	},
-
-	{
-		.desc	= "b",
-		.code	= KEY_B,
-		.gpio =  RK30_PIN0_PD4,
-		.active_low = PRESS_LEV_LOW,
-		  .wakeup = 1,
-	},
-
-	{
-		.desc	= "a",
-		.code	= KEY_A,
-		.gpio =RK30_PIN1_PB4,
-		.active_low = PRESS_LEV_LOW,
-		  .wakeup = 1,
-	},
-
-	{
-		.desc	= "x",
-		.code	= KEY_X,
-		.gpio = RK30_PIN0_PD5,
-		.active_low = PRESS_LEV_LOW,
-		  .wakeup = 1,
-	},
-	
-};
-#else
-
-
-static struct rk29_keys_button key_button[] = {
-	{
-		.desc	= "play",
-		.code	= KEY_POWER,
-		.gpio	= RK30_PIN0_PA4, 
-		.active_low = PRESS_LEV_LOW,
-		.wakeup	= 1,
-	},
-
-	{
-		.desc	= "home",//"F1",
-		.code	=  KEY_HOME,//KEY_F1, //KEY_HOME,//KEY_VOLUMEUP,
-		.gpio = INVALID_GPIO,
 		.adc_value	= 1,
-		.active_low = PRESS_LEV_LOW,
-	},
-
-	{
-		.desc	= "back",
-		.code	= KEY_BACK,
 		.gpio = INVALID_GPIO,
-		.adc_value	= 551,//682,
 		.active_low = PRESS_LEV_LOW,
 	},
-
-	{
-		.desc	= "select",
-		.code	= KEY_S,
-		.gpio = INVALID_GPIO,
-		.adc_value	= 867,
-		.active_low = PRESS_LEV_LOW,
-	},
-		
-	{
-		.desc	= "start",
-		.code	= KEY_ENTER,
-		.gpio = INVALID_GPIO,
-		.adc_value	= 937,
-		.active_low = PRESS_LEV_LOW,
-	},
-	
-	{
-		.desc	= "menu",
-		.code	= KEY_MENU,
-		.gpio = INVALID_GPIO,
-		.adc_value	= 340,//767,
-		.active_low = PRESS_LEV_LOW,
-	}, 
-
-
-	{
-		.desc	= "vol-",
-		.code	= KEY_VOLUMEDOWN,  //KEY_VOLUMEDOWN,
-		.gpio = INVALID_GPIO,
-		.adc_value	= 170,
-		.active_low = PRESS_LEV_LOW,
-	},
-
-	{
-		.desc	= "vol+",
-		.code	= KEY_VOLUMEUP,
-		.gpio = INVALID_GPIO,
-		.adc_value	= 743,////767,
-		.active_low = PRESS_LEV_LOW,
-	},
-
-	{
-		.desc	= "left",
-		.code	= KEY_LEFT,
-		.gpio = RK30_PIN0_PC1,
-		.active_low = PRESS_LEV_LOW,
-		  .wakeup = 1,
-		
-	},
-
-	{
-		.desc	= "down",
-		.code	= KEY_DOWN,
-		.gpio =  RK30_PIN3_PB1,
-		.active_low = PRESS_LEV_LOW,
-		  .wakeup = 1,
-	},
-
-	{
-		.desc	= "right",
-		.code	= KEY_RIGHT,
-		.gpio =RK30_PIN0_PC2 ,
-		.active_low = PRESS_LEV_LOW,
-		  .wakeup = 1,
-	},
-
-	{
-		.desc	= "up",
-		.code	= KEY_UP,
-		.gpio = RK30_PIN0_PC0,
-		.active_low = PRESS_LEV_LOW,
-		  .wakeup = 1,
-	},
-	
 };
-#endif
-
 struct rk29_keys_platform_data rk29_keys_pdata = {
 	.buttons	= key_button,
 	.nbuttons	= ARRAY_SIZE(key_button),
 	.chn	= 1,  //chn: 0-7, if do not use ADC,set 'chn' -1
 };
 
-
- #ifdef CONFIG_RK_REMOTECTL
-
-void rk30_remotectl_iomux(void)
-{
-	;
-}
-
-struct RKxx_remotectl_platform_data rk30_remotectl_pdata = {
-    .gpio	=  RK30_PIN3_PA0,//RK30_PIN2_PD5,
-    .wakeup	= 1,
-    .rep    = 0,
-    .set_iomux = rk30_remotectl_iomux,    
-};
-
-static struct platform_device rk30_device_remotectl = {
-	.name		= "rkxx-remotectl",
-	.id		= -1,
-	.dev		= {
-		.platform_data	= &rk30_remotectl_pdata,
-	},
-};
-#endif
 /*
      v1.0 : 	ignore
      v1.1 :      rk610 lvds + rk610 codec + MT5931_MT6622 + light photoresistor + adc/cw2015
@@ -378,155 +137,6 @@ static struct ct36x_platform_data ct36x_info = {
 	.orientation = {1, 0, 0, 1},
 };
 #endif
-
-#if defined(CONFIG_TOUCHSCREEN_GSLX680)
-
-#define TOUCH_RESET_PIN		RK30_PIN0_PB6
-#define TOUCH_INT_PIN		RK30_PIN1_PB7
-int gslX680_init_platform_hw(void)
-{
-
-        //printk("ft5306_init_platform_hw\n");
-        if(gpio_request(TOUCH_RESET_PIN,NULL) != 0){
-                gpio_free(TOUCH_RESET_PIN);
-                printk("gslX680_init_platform_hw gpio_request error\n");
-                return -EIO;
-        }
-
-        if(gpio_request(TOUCH_INT_PIN,NULL) != 0){
-                gpio_free(TOUCH_INT_PIN);
-                printk("gslX680_init_platform_hw gpio_request error\n");
-                return -EIO;
-        }
-        gpio_direction_output(TOUCH_RESET_PIN, GPIO_HIGH);
-        mdelay(10);
-        gpio_set_value(TOUCH_RESET_PIN,GPIO_LOW);
-        mdelay(10);
-        gpio_set_value(TOUCH_RESET_PIN,GPIO_HIGH);
-        msleep(300);
-        return 0;
-
-}
-
-struct gslX680_platform_data gslX680_info = {
-	//.model = 8105,
-	//.irq_pin = RK2928_PIN1_PB0,
-	.rest_pin = TOUCH_RESET_PIN,
-	.init_platform_hw = gslX680_init_platform_hw,
-};
-
-#endif
-
-
-#if defined(CONFIG_TOUCHSCREEN_GSLX680_RK3168)
-#define TOUCH_RESET_PIN RK30_PIN0_PB6
-#define TOUCH_EN_PIN NULL
-#define TOUCH_INT_PIN RK30_PIN1_PB7
-
-int gslx680_init_platform_hw(void)
-{
-
-       if(gpio_request(TOUCH_RESET_PIN,NULL) != 0){
-                gpio_free(TOUCH_RESET_PIN);
-                printk("gslx680_init_platform_hw gpio_request error\n");
-                return -EIO;
-        }
-        if(gpio_request(TOUCH_INT_PIN,NULL) != 0){
-                gpio_free(TOUCH_INT_PIN);
-                printk("gslx680_init_platform_hw  gpio_request error\n");
-                return -EIO;
-        }
-        gpio_direction_output(TOUCH_RESET_PIN, GPIO_HIGH);
-        mdelay(10);
-        gpio_set_value(TOUCH_RESET_PIN,GPIO_LOW);
-        mdelay(10);
-        gpio_set_value(TOUCH_RESET_PIN,GPIO_HIGH);
-        msleep(300);
-        return 0;
-
-}
-
-struct ts_hw_data     gslx680_info = {
-	.reset_gpio = TOUCH_RESET_PIN,
-	.touch_en_gpio = TOUCH_INT_PIN,
-	.init_platform_hw = gslx680_init_platform_hw,
-};
-#endif
-
-#if defined(CONFIG_TOUCHSCREEN_GSLX680_RK3188)
-#define TOUCH_RESET_PIN RK30_PIN0_PB6
-#define TOUCH_EN_PIN NULL
-#define TOUCH_INT_PIN RK30_PIN1_PB7
-
-int gslx680_init_platform_hw(void)
-{
-
-       if(gpio_request(TOUCH_RESET_PIN,NULL) != 0){
-                gpio_free(TOUCH_RESET_PIN);
-                printk("gslx680_init_platform_hw gpio_request error\n");
-                return -EIO;
-        }
-        if(gpio_request(TOUCH_INT_PIN,NULL) != 0){
-                gpio_free(TOUCH_INT_PIN);
-                printk("gslx680_init_platform_hw  gpio_request error\n");
-                return -EIO;
-        }
-        gpio_direction_output(TOUCH_RESET_PIN, GPIO_HIGH);
-        mdelay(10);
-        gpio_set_value(TOUCH_RESET_PIN,GPIO_LOW);
-        mdelay(10);
-        gpio_set_value(TOUCH_RESET_PIN,GPIO_HIGH);
-        msleep(300);
-        return 0;
-
-}
-
-struct ts_hw_data     gslx680_info = {
-	.reset_gpio = TOUCH_RESET_PIN,
-	.touch_en_gpio = TOUCH_INT_PIN,
-	.init_platform_hw = gslx680_init_platform_hw,
-};
-#endif
-#if defined (CONFIG_TOUCHSCREEN_GT813)
-//#define TOUCH_RESET_PIN  RK2928_PIN3_PC3
-//#define TOUCH_INT_PIN    RK2928_PIN3_PC7
-
-#define TOUCH_RESET_PIN		RK30_PIN0_PB6
-#define TOUCH_INT_PIN		RK30_PIN1_PB7
-int gt811_init_platform_hw(void)
-{
-    if(gpio_request(TOUCH_RESET_PIN,NULL) != 0){
-      gpio_free(TOUCH_RESET_PIN);
-      printk("gt811_init_platform_hw gpio_request error\n");
-      return -EIO;
-    }
-
-    if(gpio_request(TOUCH_INT_PIN,NULL) != 0){
-      gpio_free(TOUCH_INT_PIN);
-      printk("gt811_init_platform_hw gpio_request error\n");
-      return -EIO;
-    }
-    //gpio_pull_updown(TOUCH_INT_PIN, 1);
-    gpio_direction_output(TOUCH_RESET_PIN, 0);
-    msleep(500);
-    gpio_set_value(TOUCH_RESET_PIN,GPIO_LOW);
-    msleep(500);
-    gpio_set_value(TOUCH_RESET_PIN,GPIO_HIGH);
-	mdelay(100);
-
-    return 0;
-}
-
-
-static struct goodix_platform_data gt813_info = {
-  .model= 813,
-  	.irq_pin = TOUCH_INT_PIN,
-  	.rest_pin = TOUCH_RESET_PIN,
-  .init_platform_hw= gt811_init_platform_hw,
-};
-#endif
-
-
 static struct spi_board_info board_spi_devices[] = {
 };
 
@@ -536,7 +146,7 @@ static struct spi_board_info board_spi_devices[] = {
 #ifdef CONFIG_BACKLIGHT_RK29_BL
 #define PWM_ID            3
 #define PWM_MODE	  PWM3
-#define PWM_EFFECT_VALUE  0//1
+#define PWM_EFFECT_VALUE  1
 
 #define LCD_DISP_ON_PIN
 
@@ -589,24 +199,7 @@ static int rk29_backlight_pwm_suspend(void)
 #ifdef  LCD_DISP_ON_PIN
 	gpio_direction_output(BL_EN_PIN, 0);
 	gpio_set_value(BL_EN_PIN, !BL_EN_VALUE);
-
-#ifdef CONFIG_LCD_SKLVDS_1024X600
-
-	gpio_direction_output(RK30_PIN3_PD4, 0);
-	gpio_set_value(RK30_PIN3_PD4, GPIO_LOW);
 #endif
-
-#ifdef CONFIG_LCD_SKLVDS_1280X800
-
-	gpio_direction_output(RK30_PIN3_PD4, 0);
-	gpio_set_value(RK30_PIN3_PD4, GPIO_LOW);
-#endif
-
-
-#endif
-
-
-
 	return ret;
 }
 
@@ -617,33 +210,16 @@ static int rk29_backlight_pwm_resume(void)
 	gpio_free(pwm_gpio);
 	iomux_set(PWM_MODE);
 #ifdef  LCD_DISP_ON_PIN
-
-#ifdef CONFIG_LCD_SKLVDS_1024X600
-msleep(100);
-#else
-msleep(30);
-#endif
+	msleep(30);
 	gpio_direction_output(BL_EN_PIN, 1);
 	gpio_set_value(BL_EN_PIN, BL_EN_VALUE);
-
-#ifdef CONFIG_LCD_SKLVDS_1024X600
-	gpio_direction_output(RK30_PIN3_PD4, 1);
-	gpio_set_value(RK30_PIN3_PD4, GPIO_HIGH);
-#endif
-
-#ifdef CONFIG_LCD_SKLVDS_1280X800
-	gpio_direction_output(RK30_PIN3_PD4, 1);
-	gpio_set_value(RK30_PIN3_PD4, GPIO_HIGH);
-#endif
-
-
 #endif
 	return 0;
 }
 
 static struct rk29_bl_info rk29_bl_info = {
-        .min_brightness = 90,//65,
-        .max_brightness = 255,//150,
+        .min_brightness = 65,
+        .max_brightness = 150,
         .brightness_mode =BRIGHTNESS_MODE_CONIC,
 	.pre_div = 30 * 1000,  // pwm output clk: 30k;
 	.pwm_id = PWM_ID,
@@ -698,39 +274,6 @@ static struct sensor_platform_data lis3dh_info = {
 	.orientation = {-1, 0, 0, 0, 1, 0, 0, 0, -1},
 };
 #endif
-
-
-/*MMA7660 gsensor*/
-#if defined (CONFIG_GS_MMA7660)
-#define MMA7660_INT_PIN   RK30_PIN3_PD7//RK2928_PIN1_PB2
-
-static int mma7660_init_platform_hw(void)
-{
-	//rk30_mux_api_set(GPIO1B2_SPI_RXD_UART1_SIN_NAME, GPIO1B_GPIO1B2);
-
-	return 0;
-}
-
-static struct sensor_platform_data mma7660_info = {
-	.type = SENSOR_TYPE_ACCEL,
-	.irq_enable = 1,
-	.poll_delay_ms = 30,
-        .init_platform_hw = mma7660_init_platform_hw,
-       //#if defined(V86_VERSION_1_0) || defined(V86_VERSION_1_1)
-           	//#if defined(V86_VERSION_1_0)
-           //.orientation = {1, 0, 0, 0, 0, -1, 0, -1, 0},
-           // #else if defined(V86_VERSION_1_1)
- 
- 		 .orientation = {0, -1, 0, -1, 0, 0, 0, 0, -1},
-          //  .orientation = {0, 1, 0, 0, 0, -1, 1, 0, 0},
-           // #endif
-    	//	.orientation = {0, -1, 0, 0, 0, -1, -1, 0, 0},
-        //.orientation = {-1, 0, 0, 0, 0, -1, 0, 1, 0},
-        //#endif
-};
-#endif
-
-
 
 #if defined (CONFIG_COMPASS_AK8963)
 static struct sensor_platform_data akm8963_info =
@@ -887,14 +430,14 @@ static struct sensor_platform_data cm3217_info = {
 
 #ifdef CONFIG_FB_ROCKCHIP
 
-#if  0//DS1006H_V1_2_SUPPORT
+#if DS1006H_V1_2_SUPPORT
 #define LCD_CS_PIN         RK30_PIN0_PB0
 #else
 #define LCD_CS_PIN         INVALID_GPIO
 #endif
 #define LCD_CS_VALUE       GPIO_HIGH
 
-#if 0//DS1006H_V1_2_SUPPORT
+#if DS1006H_V1_2_SUPPORT
 #define LCD_EN_PIN         RK30_PIN0_PB1
 #else
 #define LCD_EN_PIN         RK30_PIN0_PB0
@@ -1114,73 +657,6 @@ static struct rk610_ctl_platform_data rk610_ctl_pdata = {
 	.rk610_power_on_init = rk610_power_on_init,
 };
 #endif
-
-#if defined(CONFIG_MFD_RK616)
-#define RK616_RST_PIN 			RK30_PIN3_PB2
-#define RK616_PWREN_PIN			INVALID_GPIO//RK30_PIN0_PA3
-#define RK616_SCL_RATE			(100*1000)   //i2c scl rate
-static int rk616_power_on_init(void)
-{
-	int ret;
-
-	if(RK616_PWREN_PIN != INVALID_GPIO)
-	{
-		ret = gpio_request(RK616_PWREN_PIN, "rk616 pwren");
-		if (ret)
-		{
-			printk(KERN_ERR "rk616 pwren gpio request fail\n");
-		}
-		else 
-		{
-			gpio_direction_output(RK616_PWREN_PIN,GPIO_HIGH);
-		}
-	}
-	
-	if(RK616_RST_PIN != INVALID_GPIO)
-	{
-		ret = gpio_request(RK616_RST_PIN, "rk616 reset");
-		if (ret)
-		{
-			printk(KERN_ERR "rk616 reset gpio request fail\n");
-		}
-		else 
-		{
-			gpio_direction_output(RK616_RST_PIN, GPIO_HIGH);
-			msleep(2);
-			gpio_direction_output(RK616_RST_PIN, GPIO_LOW);
-			msleep(10);
-	    		gpio_set_value(RK616_RST_PIN, GPIO_HIGH);
-		}
-	}
-
-	return 0;
-	
-}
-
-
-static int rk616_power_deinit(void)
-{
-	gpio_set_value(RK616_PWREN_PIN,GPIO_LOW);
-	gpio_set_value(RK616_RST_PIN,GPIO_LOW);
-	gpio_free(RK616_PWREN_PIN);
-	gpio_free(RK616_RST_PIN);
-	
-	return 0;
-}
-
-static struct rk616_platform_data rk616_pdata = {
-	.power_init = rk616_power_on_init,
-	.power_deinit = rk616_power_deinit,
-	.scl_rate   = RK616_SCL_RATE,
-	.lcd0_func = INPUT,             //port lcd0 as input
-	.lcd1_func = OUTPUT,             //port lcd1 as input
-	.lvds_ch_nr = 1,		//the number of used lvds channel  
-	.hdmi_irq = INVALID_GPIO,    //RK30_PIN2_PD6,
-	.spk_ctl_gpio = RK30_PIN2_PD7,
-	.hp_ctl_gpio = RK30_PIN2_PD7,
-};
-#endif
-
 
 #ifdef CONFIG_SND_SOC_RK610
 static int rk610_codec_io_init(void)
@@ -1787,12 +1263,6 @@ static struct platform_device *devices[] __initdata = {
 #ifdef CONFIG_RFKILL_RK
 	&device_rfkill_rk,
 #endif
-
-#ifdef CONFIG_RK_REMOTECTL	
-    &rk30_device_remotectl,
-#endif
-
-
 #ifdef CONFIG_GPS_RK
 	&rk_device_gps,
 #endif
@@ -1869,16 +1339,6 @@ static struct i2c_board_info __initdata i2c0_info[] = {
 		.irq           = RK30_PIN3_PD7,	
 		.platform_data = &akm8963_info,
 	},
-#endif
-
-#if defined (CONFIG_GS_MMA7660)
-		{
-			.type		= "gs_mma7660",
-			.addr		= 0x4c,
-			.flags		= 0,
-			.irq		= MMA7660_INT_PIN,
-			.platform_data = &mma7660_info,
-		},
 #endif
 
 #if defined (CONFIG_LS_PHOTORESISTOR)
@@ -2327,45 +1787,6 @@ static struct i2c_board_info __initdata i2c2_info[] = {
 		.platform_data = &ct36x_info,
 	},
 #endif
-
-#if defined(CONFIG_TOUCHSCREEN_GSLX680)
-	{
-		.type          = "gslX680",
-		.addr          = 0x40,
-		.flags         = 0,
-		.irq           = TOUCH_INT_PIN,
-		.platform_data = &gslX680_info,
-	},
-#endif
-
-#if defined (CONFIG_TOUCHSCREEN_GSLX680_RK3168)
-    {
-        .type           = "gslX680",
-        .addr           = 0x40,
-        .flags          = 0,
-        .platform_data =&gslx680_info,
-    },
-#endif
-
-#if defined (CONFIG_TOUCHSCREEN_GSLX680_RK3188)
-    {
-        .type           = "gslX680",
-        .addr           = 0x40,
-        .flags          = 0,
-        .platform_data =&gslx680_info,
-    },
-#endif
-#if defined (CONFIG_TOUCHSCREEN_GT813)
-	{
-		.type			= "Goodix-TS",
-		.addr			= 0x5d,
-		.flags			= 0,
-		.irq			= TOUCH_INT_PIN,
-		.platform_data = &gt813_info,
-	},	
-#endif
-
-
 #if defined (CONFIG_LS_CM3217)
 	{
 		.type          = "lightsensor",
@@ -2433,27 +1854,6 @@ static struct i2c_board_info __initdata i2c4_info[] = {
 #endif
 #endif
 
-#if defined (CONFIG_MFD_RK616)
-
-	{
-		.type	       = "rk616",
-		.addr	       = 0x50,
-		.flags	       = 0,
-		.platform_data = &rk616_pdata,
-	},
-#endif
-
-
-
-
-#if defined (CONFIG_SND_SOC_RT5616)
-        {
-                .type                   = "rt5616",
-                .addr                   = 0x1b,
-                .flags                  = 0,
-               // .platform_data		= &rk5616_codec_pdata,	
-        },
-#endif
 #if defined (CONFIG_SND_SOC_RT5631)
         {
                 .type                   = "rt5631",
@@ -2545,17 +1945,6 @@ static void __init machine_rk30_board_init(void)
 	//avs_init();
 	gpio_request(POWER_ON_PIN, "poweronpin");
 	gpio_direction_output(POWER_ON_PIN, GPIO_HIGH);
-
-	
-	//WQ modify   otg
-	gpio_request(RK30_PIN0_PA3, "null");
-	gpio_direction_output(RK30_PIN0_PA3, GPIO_HIGH);
-
-
-	gpio_request(RK30_PIN1_PB2, "null");
-	gpio_direction_output(RK30_PIN1_PB2, GPIO_LOW);
-
-
 	
 	pm_power_off = rk30_pm_power_off;
 	
@@ -2578,28 +1967,7 @@ static void __init machine_rk30_board_init(void)
 
 #if defined(CONFIG_MT5931_MT6622)
 		clk_set_rate(clk_get_sys("rk_serial.0", "uart"), 24*1000000);
-#endif
-
-
-#ifdef CONFIG_LCD_SKLVDS_1024X600
-
-
-//	rk30_mux_api_set(GPIO3D4_PWM1_JTAGTRSTN_NAME, 0);//VCC_EN
-	gpio_request(RK30_PIN3_PD4, NULL);
-	gpio_direction_output(RK30_PIN3_PD4, GPIO_HIGH);		
-
-#endif
-
-#ifdef CONFIG_LCD_SKLVDS_1280X800
-
-	rk30_mux_api_set(GPIO3D4_PWM1_JTAGTRSTN_NAME, 0);//VCC_EN
-	//gpio_request(RK30_PIN3_PD4, NULL);
-	gpio_direction_output(RK30_PIN3_PD4, GPIO_HIGH);		
-
-#endif
-
-
-	
+#endif		
 }
 
 #define HD_SCREEN_SIZE 1920UL*1200UL*4*3
@@ -2680,23 +2048,11 @@ static struct cpufreq_frequency_table dvfs_arm_table_volt_level2[] = {
         {.frequency = 1008 * 1000,      .index = 1075 * 1000},
         {.frequency = 1200 * 1000,      .index = 1200 * 1000},
         {.frequency = 1416 * 1000,      .index = 1250 * 1000},
-        {.frequency = 1608 * 1000,      .index = 1300 * 1000},
+        {.frequency = 1608 * 1000,      .index = 1350 * 1000},
         {.frequency = CPUFREQ_TABLE_END},
 };
-
-static struct cpufreq_frequency_table dvfs_arm_table_volt_level3[] = { 
-	{.frequency = 312 * 1000, .index = 900 * 1000}, 
-	{.frequency = 504 * 1000, .index = 925 * 1000}, 
-	{.frequency = 816 * 1000, .index = 1000 * 1000}, 
-	{.frequency = 1008 * 1000, .index = 1075 * 1000}, 
-	{.frequency = 1200 * 1000, .index = 1200 * 1000}, 
-	{.frequency = 1416 * 1000, .index = 1250 * 1000}, 
-	{.frequency = 1608 * 1000, .index = 1350 * 1000}, 
-	{.frequency = CPUFREQ_TABLE_END},
-};
-
 //if you board is good for volt quality,select dvfs_arm_table_volt_level0
-//#define dvfs_arm_table dvfs_arm_table_volt_level2
+#define dvfs_arm_table dvfs_arm_table_volt_level2
 
 /******************************** gpu dvfs frequency volt table **********************************/
 //sdk
@@ -2720,27 +2076,16 @@ static struct cpufreq_frequency_table dvfs_gpu_table_volt_level1[] = {
         {.frequency = CPUFREQ_TABLE_END},
 };
 
-//#define dvfs_gpu_table dvfs_gpu_table_volt_level1
+#define dvfs_gpu_table dvfs_gpu_table_volt_level1
 
 /******************************** ddr dvfs frequency volt table **********************************/
 static struct cpufreq_frequency_table dvfs_ddr_table_volt_level0[] = {
 	{.frequency = 200 * 1000 + DDR_FREQ_SUSPEND,    .index = 950 * 1000},
 	{.frequency = 300 * 1000 + DDR_FREQ_VIDEO,      .index = 1000 * 1000},
 	{.frequency = 396 * 1000 + DDR_FREQ_NORMAL,     .index = 1100 * 1000},
-        {.frequency = 460 * 1000 + DDR_FREQ_DUALVIEW,     .index = 1150 * 1000},
-	//{.frequency = 528 * 1000 + DDR_FREQ_NORMAL,     .index = 1200 * 1000},
 	{.frequency = CPUFREQ_TABLE_END},
 };
 
-static struct cpufreq_frequency_table dvfs_ddr_table_t[] = {
-	{.frequency = 200 * 1000 + DDR_FREQ_SUSPEND,    .index = 950 * 1000},
-	{.frequency = 460 * 1000 + DDR_FREQ_NORMAL,     .index = 1200 * 1000},
-	{.frequency = CPUFREQ_TABLE_END},
-};
-
-//if you board is good for volt quality,select dvfs_arm_table_volt_level0
-#define dvfs_arm_table dvfs_arm_table_volt_level1
-#define dvfs_gpu_table dvfs_gpu_table_volt_level1
 #define dvfs_ddr_table dvfs_ddr_table_volt_level0
 
 /******************************** arm dvfs frequency volt table end **********************************/
@@ -2750,42 +2095,14 @@ static struct cpufreq_frequency_table dvfs_ddr_table_t[] = {
 //#define DVFS_CPU_TABLE_SIZE	(ARRAY_SIZE(dvfs_cpu_logic_table))
 //static struct cpufreq_frequency_table cpu_dvfs_table[DVFS_CPU_TABLE_SIZE];
 //static struct cpufreq_frequency_table dep_cpu2core_table[DVFS_CPU_TABLE_SIZE];
-int get_max_freq(struct cpufreq_frequency_table *table)
-{
-	int i,temp=0;
-	
-	for(i=0;table[i].frequency!= CPUFREQ_TABLE_END;i++)
-	{
-		if(temp<table[i].frequency)
-			temp=table[i].frequency;
-	}	
-	printk("get_max_freq=%d\n",temp);
-	return temp;
-}
 
 void __init board_clock_init(void)
 {
-	u32 flags=RK30_CLOCKS_DEFAULT_FLAGS;
-#if !defined(CONFIG_ARCH_RK3188)
-	if(get_max_freq(dvfs_gpu_table)<=(400*1000))
-	{	
-		flags=RK30_CLOCKS_DEFAULT_FLAGS|CLK_GPU_GPLL;
-	}
-	else
-		flags=RK30_CLOCKS_DEFAULT_FLAGS|CLK_GPU_CPLL;
-#endif	
-	rk30_clock_data_init(periph_pll_default, codec_pll_default, flags);
+	rk30_clock_data_init(periph_pll_default, codec_pll_default, RK30_CLOCKS_DEFAULT_FLAGS);
 	//dvfs_set_arm_logic_volt(dvfs_cpu_logic_table, cpu_dvfs_table, dep_cpu2core_table);
 	dvfs_set_freq_volt_table(clk_get(NULL, "cpu"), dvfs_arm_table);
 	dvfs_set_freq_volt_table(clk_get(NULL, "gpu"), dvfs_gpu_table);
-#if defined(CONFIG_ARCH_RK3188)
-	if (rk_pll_flag() == 0)
-		dvfs_set_freq_volt_table(clk_get(NULL, "ddr"), dvfs_ddr_table);
-	else
-		dvfs_set_freq_volt_table(clk_get(NULL, "ddr"), dvfs_ddr_table_t);
-#else
 	dvfs_set_freq_volt_table(clk_get(NULL, "ddr"), dvfs_ddr_table);
-#endif
 }
 
 MACHINE_START(RK30, "RK30board")

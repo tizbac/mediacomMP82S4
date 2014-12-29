@@ -229,6 +229,7 @@ static const struct file_operations rk610_reg_fops = {
 };
 #endif
 
+extern int rk61x_detect(struct i2c_client *client);
 static int rk610_control_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
 {
@@ -237,14 +238,8 @@ static int rk610_control_probe(struct i2c_client *client,
 	struct rk610_core_info *core_info = NULL; 
 	struct rk610_ctl_platform_data *pdata = client->dev.platform_data;
 	DBG("[%s] start\n", __FUNCTION__);
-	core_info = kmalloc(sizeof(struct rk610_core_info), GFP_KERNEL);
-	if(!core_info)
-	{
-		dev_err(&client->dev, ">> rk610 core inf kmalloc fail!");
-		return -ENOMEM;
-	}
-	memset(core_info, 0, sizeof(struct rk610_core_info));
-	core_info->pdata = pdata;
+	if(pdata->rk610_power_on_init)
+		pdata->rk610_power_on_init();
 	#if defined(CONFIG_SND_RK29_SOC_I2S_8CH)        
 	iis_clk = clk_get_sys("rk29_i2s.0", "i2s");
 	#elif defined(CONFIG_SND_RK29_SOC_I2S_2CH)
@@ -268,10 +263,20 @@ static int rk610_control_probe(struct i2c_client *client,
 		#endif
 		clk_put(iis_clk);
 	}
+	if(rk61x_detect(client) < 0)
+	{
+		return -ENODEV;
+	}
+	core_info = kmalloc(sizeof(struct rk610_core_info), GFP_KERNEL);
+	if(!core_info)
+	{
+		dev_err(&client->dev, ">> rk610 core inf kmalloc fail!");
+		return -ENOMEM;
+	}
+	memset(core_info, 0, sizeof(struct rk610_core_info));
+	core_info->pdata = pdata;
 
 	rk610_control_client = client;
-	if(core_info->pdata->rk610_power_on_init)
-		core_info->pdata->rk610_power_on_init();
 	core_info->client = client;
 	core_info->dev = &client->dev;
 	i2c_set_clientdata(client,core_info);

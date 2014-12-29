@@ -152,10 +152,14 @@ static struct snd_soc_card snd_soc_card_rk29 = {
 
 static struct platform_device *rk29_snd_device;
 
+int lcd_supported(char * name);
 static int __init audio_card_init(void)
 {
 	int ret =0;	
 	DBG("Enter::%s----%d\n",__FUNCTION__,__LINE__);
+	if(!lcd_supported("rkhdmi610")) {
+		return -ENODEV;
+	}
 	rk29_snd_device = platform_device_alloc("soc-audio", -1);
 	if (!rk29_snd_device) {
 		printk("[%s] platform device allocation failed\n", __FUNCTION__);

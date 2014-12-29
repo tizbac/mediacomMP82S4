@@ -72,20 +72,19 @@ static void rk610_scaler_disable(struct i2c_client *client)
     rk610_scaler_write_p0_reg(client, SCL_CON0, &c);
 }
 
+extern int lcd_switch_lcdc(void);
 static int rk610_output_config(struct i2c_client *client,struct rk29fb_screen *screen,int mode)
 {
     char c=0;
     RK610_DBG(&client->dev,"%s \n",__FUNCTION__);
      if(SCREEN_LVDS == screen->type){
+        int lvdss = lcd_switch_lcdc() ? FROM_LCD1 : FROM_LCD0_OR_SCL;
         if(mode == LCD_OUT_SCL || mode == LCD_OUT_BYPASS){
 		c = LVDS_OUT_CLK_PIN(0) |LVDS_OUT_CLK_PWR_PIN(1) |LVDS_PLL_PWR_PIN(0) \
 		    |LVDS_LANE_IN_FORMAT(DATA_D0_MSB) \
 		    |LVDS_OUTPUT_FORMAT(screen->lvds_format) | LVDS_BIASE_PWR(1); 
-#if defined(CONFIG_DUAL_LCDC_DUAL_DISP_IN_KERNEL) && defined(CONFIG_HDMI_RK610)
-		c |=  LVDS_INPUT_SOURCE(FROM_LCD1);
-#else
-		c |=  LVDS_INPUT_SOURCE(FROM_LCD0_OR_SCL);
-#endif                
+		c |=  LVDS_INPUT_SOURCE(lvdss);
+            
 		rk610_scaler_write_p0_reg(client, LVDS_CON0, &c);
 		c = LCD1_OUT_ENABLE(LCD1_AS_IN);
 		rk610_scaler_write_p0_reg(client, LCD1_CON, &c);
@@ -96,14 +95,11 @@ static int rk610_output_config(struct i2c_client *client,struct rk29fb_screen *s
 		    c = LVDS_OUT_CLK_PIN(0) |LVDS_OUT_CLK_PWR_PIN(0) |LVDS_PLL_PWR_PIN(1) \
 			|LVDS_LANE_IN_FORMAT(DATA_D0_MSB)  \
 			|LVDS_OUTPUT_FORMAT(screen->lvds_format) | LVDS_BIASE_PWR(0); 
-#if defined(CONFIG_DUAL_LCDC_DUAL_DISP_IN_KERNEL) && defined(CONFIG_HDMI_RK610)
-		    c |=  LVDS_INPUT_SOURCE(FROM_LCD1);
-#else
-		    c |=  LVDS_INPUT_SOURCE(FROM_LCD0_OR_SCL);
-#endif                
+		     c |=  LVDS_INPUT_SOURCE(lvdss);
+
+		    rk610_scaler_write_p0_reg(client, LVDS_CON0, &c);
 		    c = LCD1_OUT_ENABLE(LCD1_AS_IN);
 		    rk610_scaler_write_p0_reg(client, LCD1_CON, &c);
-		    rk610_scaler_write_p0_reg(client, LVDS_CON0, &c);
 		    c = LVDS_OUT_ENABLE(0xf) |LVDS_TX_PWR_ENABLE(0xf); 
 		    rk610_scaler_write_p0_reg(client, LVDS_CON1, &c);
              
@@ -427,11 +423,15 @@ int rk610_lcd_init(struct rk610_core_info *rk610_core_info)
     return 0;
 }
 
+int lcd_supported(char * name);
 static int rk610_lcd_probe(struct platform_device *pdev)
 {
 	struct rk610_core_info *core_info = NULL;
 	rk_screen *screen = NULL;
 
+	if(!lcd_supported("rk610")) {
+		return -ENODEV;
+	}
 	core_info = dev_get_drvdata(pdev->dev.parent);
 	if(!core_info)
 	{

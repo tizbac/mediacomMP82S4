@@ -899,7 +899,6 @@ static struct platform_device device_lcdc1 = {
 #define RK610_RST_PIN_MUX_NAME		GPIO0C6_TRACECLK_SMCADDR2_NAME	
 #define RK610_RST_PIN_MUX_MODE		GPIO0C_GPIO0C6
 #define RK610_RST_PIN 			RK30_PIN0_PC6
-dg
 static int rk610_power_on_init(void)
 {
 	int ret;

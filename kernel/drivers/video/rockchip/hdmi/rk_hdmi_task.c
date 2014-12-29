@@ -1,5 +1,6 @@
 #include <linux/kernel.h>
 #include <linux/delay.h>
+#include <mach/yfmach.h>
 #include "rk_hdmi.h"
 
 #ifdef CONFIG_RK_HDMI_CTL_CODEC
@@ -9,6 +10,7 @@ extern void codec_set_spk(bool on);
 #define HDMI_MAX_TRY_TIMES	1
 #define HDMI_MAX_ID 1
 
+static int hdmi_disabled;
 static char *envp[] = {"INTERFACE=HDMI", NULL};
 
 static void hdmi_sys_show_state(int state)
@@ -61,12 +63,11 @@ int hdmi_sys_init(void)
 	hdmi->audio.rate		= HDMI_AUDIO_DEFAULT_RATE;
 	hdmi->audio.word_length	= HDMI_AUDIO_DEFAULT_WORD_LENGTH;
 	
+	hdmi_disabled = !env_get_u32("hdmi_supported", 1);
 	memset(&hdmi->edid, 0, sizeof(struct hdmi_edid));
 	INIT_LIST_HEAD(&hdmi->edid.modelist);
 	return 0;
 }
-
-int fg_hdmi_open = 0;
 
 void hdmi_sys_remove(void)
 {
@@ -91,7 +92,6 @@ void hdmi_sys_remove(void)
 	#endif
 	#ifdef CONFIG_RK_HDMI_CTL_CODEC
 	codec_set_spk(1);
-	fg_hdmi_open = 0;
 	#endif
 }
 
@@ -168,6 +168,7 @@ static int hdmi_process_command(void)
 
 static DEFINE_MUTEX(work_mutex);
 
+extern int lcd_supported(char * name);
 void hdmi_work(struct work_struct *work)
 {
 	int hotplug, state_last;
@@ -178,7 +179,7 @@ void hdmi_work(struct work_struct *work)
 	/* Process hdmi command */
 	hdmi->state = hdmi_process_command();
 	
-	if(!hdmi->enable || hdmi->suspend) {
+	if(!hdmi->enable || hdmi->suspend || hdmi_disabled) {
 		mutex_unlock(&work_mutex);
 		return;
 	}
@@ -233,14 +234,12 @@ void hdmi_work(struct work_struct *work)
 					#endif
 					#ifdef CONFIG_RK_HDMI_CTL_CODEC
 					codec_set_spk(0);
-					fg_hdmi_open = 1;
 					#endif
 				}
 				break;
 			case SYSTEM_CONFIG:
-                                #ifdef CONFIG_HDMI_RK616
-                                hdmi->remove();
-                                #endif
+				if(lcd_supported("rk616"))
+					hdmi->remove();
 				if(hdmi->autoconfig)	
 					hdmi->vic = hdmi_find_best_mode(hdmi, 0);
 				else
